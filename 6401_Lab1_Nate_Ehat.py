@@ -1,15 +1,18 @@
+#%% [markdown]
+# DATS-6401 - LAB #1
+# Nate Ehat
+
 #%%
 # LIBRARY IMPORTS
 
 import numpy as np
 import pandas as pd
-
 import matplotlib.pyplot as plt
-import seaborn as sns
 
-from scipy import stats as stats
-import statistics
-import datetime as dt
+# import seaborn as sns
+# from scipy import stats as stats
+# import statistics
+# import datetime as dt
 
 print("\nIMPORT SUCCESS")
 
@@ -120,12 +123,16 @@ plt.show()
     # Timeseries dataset with Sales, AdBudget and GDP column
 
 df = pd.read_csv('/Users/nehat312/GitHub/Complex-Data-Visualization-/tute1.csv', index_col=0)
-col_names = df.columns
 print(df.head())
 print(df.info())
+
 #print(df.describe())
+#col_names = df.columns
 #print(col_names)
 
+#%%
+df1 = pd.to_datetime(df, infer_datetime_format=True)
+print(df1.head())
 
 #%%
 # QUESTION 7
@@ -174,13 +181,13 @@ plt.show()
 # Hint: You need to us the plt.hist().
 
 plt.figure(figsize=(12,12))
-plt.hist(df['Sales'], label='Sales', orientation='horizontal')
-plt.hist(df['AdBudget'], label='AdBudget', orientation='horizontal')
-plt.hist(df['GDP'], label='GDP', orientation='horizontal')
+plt.hist(df['Sales'], label='Sales', orientation='vertical')
+plt.hist(df['AdBudget'], label='AdBudget', orientation='vertical')
+plt.hist(df['GDP'], label='GDP', orientation='vertical')
 plt.title(f'HISTOGRAM PLOT OF SALES / AD BUDGET / GDP:')
 #SWITCH THESE
-plt.xlabel('FREQUENCY (#)')
-plt.ylabel('VALUE ($)')
+plt.xlabel('VALUE ($)')
+plt.ylabel('FREQUENCY (#)')
 plt.legend()
 plt.grid()
 plt.show()
