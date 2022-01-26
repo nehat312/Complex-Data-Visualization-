@@ -1,7 +1,6 @@
 #%%
 # LIBRARY IMPORTS
 
-import os
 import numpy as np
 import pandas as pd
 
@@ -31,23 +30,34 @@ x = np.random.normal(meanx, stdx, n)
 y = np.random.normal(meany, stdy, n)
 
 #%%
-# QUESTION 2
+# QUESTION 2 - MANUAL
 # Write a python program that calculates Pearson’s correlation coefficient
 # Between two random variables x and y defined in question 1
 
-# CORRELATION COEFFICIENT CALC
-## SELF-CALCULATE - cov() function ok??
+def corr_coef_pearson(x,y):
+  n = len(x)
+  sum_x = float(sum(x))
+  sum_y = float(sum(y))
+  sum_x_sq = sum(xj*xj for xj in x)
+  sum_y_sq = sum(yj*yj for yj in y)
+  pearson_sum = sum(xj*yj for xj, yj in zip(x, y))
+  numerator = pearson_sum - (sum_x * sum_y/n)
+  denominator = pow((sum_x_sq - pow(sum_x, 2) / n) * (sum_y_sq - pow(sum_y, 2) / n), 0.5)
+  if denominator == 0: return 0
+  return numerator / denominator
 
-corr_coef = np.corrcoef(x, y)
+print(f'Pearson Correlation Coefficient: {corr_coef_pearson(x,y):.5f}')
+
+# utilized stackoverflow.com for reference in coding manual Pearson function
+
+#%%
+# QUESTION 2 - AUTOMATED
+# Write a python program that calculates Pearson’s correlation coefficient
+# Between two random variables x and y defined in question 1
+
+corr_coef = np.corrcoef(x, y)[0, 1]
 print(corr_coef)
-print(f'Pearson Correlation Coefficient: {corr_coef}')
-
-#cov(X, Y) = (sum (x - np.mean(x)) * (y - np.mean(y)) ) * 1/(n-1)
-#print(f'Correlation Coefficient - Bill vs Tip: {r_x_y:.2f}')
-
-#from toolbox import correlation_coefficient_calc
-#r_x_y = correlation_coefficient_calc(tip, meal)
-
+print(f'Pearson Correlation Coefficient: {corr_coef:.5f}')
 
 #%%
 # QUESTION 3
@@ -67,21 +77,7 @@ print(f'Sample Mean of Random Variable X: {x_mean:.2f}')
 print(f'Sample Mean of Random Variable Y: {y_mean:.2f}')
 print(f'Sample Variance of Random Variable X: {x_var:.2f}')
 print(f'Sample Variance of Random Variable Y: {y_var:.2f}')
-print(f'Sample Pearson Correlation Coefficient Between X+Y: {corr_coef}')
-
-#total_bill_med = np.median(df['total_bill'])
-#tip_med = np.median(df['tip'])
-#total_bill_std = np.std(df['total_bill'])
-#tip_std = np.std(df['tip'])
-#total_bill_cov = np.cov(df['total_bill'])
-#tip_cov = np.cov(df['tip'])
-
-#print(f'Total Bill Median: {total_bill_med:.2f}')
-#print(f'Tip Median: {tip_med:.2f}')
-#print(f'Total Bill Std. Dev.: {total_bill_std:.2f}')
-#print(f'Tip Std. Dev.: {tip_std:.2f}')
-#print(f'Total Bill Cov.: {total_bill_cov:.2f}')
-#print(f'Tip Cov.: {tip_cov:.2f}')
+print(f'Sample Pearson Correlation Coefficient Between X+Y: {corr_coef:.5f}')
 
 #%%
 # QUESTION 4
@@ -91,12 +87,12 @@ print(f'Sample Pearson Correlation Coefficient Between X+Y: {corr_coef}')
     # Hint: You need to use plt.plot()
 
 plt.figure(figsize=(12,12))
-plt.plot(x)
-plt.plot(y)
+plt.plot(x, label='X Variables')
+plt.plot(y, label='Y Variables')
 plt.title(f'LINE PLOT OF X+Y:')# {r_x_y:.2f}')
-plt.ylabel('Y')
-plt.xlabel('X')
-plt.legend()
+plt.xlabel('SAMPLE POINTS (#)')
+plt.ylabel('VALUE (#)')
+plt.legend(loc='best')
 plt.grid()
 plt.show()
 
@@ -108,11 +104,11 @@ plt.show()
     # Add an appropriate x-label, y-label, title, and legend to each graph.
 
 plt.figure(figsize=(12,12))
-plt.hist(x)
-plt.hist(y)
-plt.title(f'HISTOGRAM PLOT OF X+Y:')# {r_x_y:.2f}')
-plt.ylabel('FREQUENCY')
-plt.xlabel('X')
+plt.hist(x, label='X Variables', orientation='horizontal')
+plt.hist(y, label='Y Variables', orientation='horizontal')
+plt.title(f'HISTOGRAM PLOT OF X+Y:')
+plt.xlabel('FREQUENCY (#)')
+plt.ylabel('VALUE (#)')
 plt.legend()
 plt.grid()
 plt.show()
@@ -138,11 +134,9 @@ print(df.info())
     # b. Sales & GDP
     # c. AdBudget & GDP
 
-sales_ads_corr_coef = np.corrcoef(df['Sales'], df['AdBudget'])
-sales_gdp_corr_coef = np.corrcoef(df['Sales'], df['GDP'])
-ads_gdp_corr_coef = np.corrcoef(df['AdBudget'], df['GDP'])
-
-
+sales_ads_corr_coef = np.corrcoef(df['Sales'], df['AdBudget'])[0,1]
+sales_gdp_corr_coef = np.corrcoef(df['Sales'], df['GDP'])[0,1]
+ads_gdp_corr_coef = np.corrcoef(df['AdBudget'], df['GDP'])[0,1]
 
 #%%
 # QUESTION 8
@@ -151,9 +145,9 @@ ads_gdp_corr_coef = np.corrcoef(df['AdBudget'], df['GDP'])
     # b. The sample Pearson’s correlation coefficient between Sales & GDP is:
     # c. The sample Pearson’s correlation coefficient between AdBudget & GDP is:
 
-print(f'Sample Pearson Correlation Coefficient between Sales & AdBudget: {sales_ads_corr_coef}')
-print(f'Sample Pearson Correlation Coefficient between Sales & GDP: {sales_gdp_corr_coef}')
-print(f'Sample Pearson Correlation Coefficient between AdBudget & GDP: {ads_gdp_corr_coef}')
+print(f'Sample Pearson Correlation Coefficient between Sales & AdBudget: {sales_ads_corr_coef:.5f}')
+print(f'Sample Pearson Correlation Coefficient between Sales & GDP: {sales_gdp_corr_coef:.5f}')
+print(f'Sample Pearson Correlation Coefficient between AdBudget & GDP: {ads_gdp_corr_coef:.5f}')
 
 #%%
 # QUESTION 9
@@ -162,13 +156,13 @@ print(f'Sample Pearson Correlation Coefficient between AdBudget & GDP: {ads_gdp_
 # Hint: You need to us the plt.plot().
 
 plt.figure(figsize=(12,12))
-plt.plot(df['Sales'])
-plt.plot(df['AdBudget'])
-plt.plot(df['GDP'])
-plt.title(f'HISTOGRAM PLOT OF SALES / ADBUDGET / GDP:') # {r_x_y:.2f}')
-plt.ylabel('FREQUENCY')
-plt.xlabel('X')
-plt.legend()
+plt.plot(df['Sales'], label='Sales')
+plt.plot(df['AdBudget'], label='AdBudget')
+plt.plot(df['GDP'], label='GDP')
+plt.title(f'LINE PLOT OF SALES / AD BUDGET / GDP:')
+plt.xlabel('DATE / TIME')
+plt.ylabel('VALUE ($)')
+plt.legend(loc='best')
 plt.grid()
 plt.show()
 
@@ -180,51 +174,15 @@ plt.show()
 # Hint: You need to us the plt.hist().
 
 plt.figure(figsize=(12,12))
-plt.hist(df['Sales'])
-plt.hist(df['AdBudget'])
-plt.hist(df['GDP'])
-plt.title(f'HISTOGRAM PLOT OF SALES / ADBUDGET / GDP:') # {r_x_y:.2f}')
-plt.ylabel('FREQUENCY')
-plt.xlabel('X')
+plt.hist(df['Sales'], label='Sales', orientation='horizontal')
+plt.hist(df['AdBudget'], label='AdBudget', orientation='horizontal')
+plt.hist(df['GDP'], label='GDP', orientation='horizontal')
+plt.title(f'HISTOGRAM PLOT OF SALES / AD BUDGET / GDP:')
+#SWITCH THESE
+plt.xlabel('FREQUENCY (#)')
+plt.ylabel('VALUE ($)')
 plt.legend()
 plt.grid()
 plt.show()
 
-
 #%%
-
-
-#%%
-
-# idxmax table
-
-data = np.random.randn(4,5)
-print(data)
-
-#%%
-
-df = pd.DataFrame(data=data, columns=[['A', 'B', 'C', 'D', 'E']], index=['Monday', 'Tuesday', 'Wednesday', 'Thursday'])
-df.head()
-
-# %%
-
-df3 = df.copy()
-for i in range(len(df)):
-    df3['max'] = df.astype('float64').idxmax(axis=1)
-    df3['min'] = df.astype('float64').idxmin(axis=1)
-    df3.loc['max'] = df.astype('float64').idxmax(axis=0)
-    df3.loc['min'] = df.astype('float64').idxmin(axis=0)
-
-#MANUALLY REMOVE CORNER EMPTY SUBTOTALS
-
-#%%
-df3.head()
-
-
-#%%
-## SCRATCH - MANUAL WAY
-A_max = np.max(df['A'])
-B_max = np.max(df['B'])
-C_max = np.max(df['C'])
-D_max = np.max(df['D'])
-E_max = np.max(df['E'])
