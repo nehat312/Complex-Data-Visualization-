@@ -92,9 +92,9 @@ print(f'Sample Pearson Correlation Coefficient Between X+Y: {corr_coef:.5f}')
 plt.figure(figsize=(12,12))
 plt.plot(x, label='X Variables')
 plt.plot(y, label='Y Variables')
-plt.title(f'LINE PLOT OF X+Y:')# {r_x_y:.2f}')
-plt.xlabel('SAMPLE POINTS (#)')
-plt.ylabel('VALUE (#)')
+plt.title(f'LINE PLOT OF X+Y:', fontsize=20)
+plt.xlabel('SAMPLE POINTS (#)', fontsize=20)
+plt.ylabel('VALUE (#)', fontsize=20)
 plt.legend(loc='best')
 plt.grid()
 plt.show()
@@ -107,11 +107,11 @@ plt.show()
     # Add an appropriate x-label, y-label, title, and legend to each graph.
 
 plt.figure(figsize=(12,12))
-plt.hist(x, label='X Variables', orientation='horizontal')
-plt.hist(y, label='Y Variables', orientation='horizontal')
-plt.title(f'HISTOGRAM PLOT OF X+Y:')
-plt.xlabel('FREQUENCY (#)')
-plt.ylabel('VALUE (#)')
+plt.hist(x, bins=50, label='X Variables', orientation='vertical', alpha=0.5)
+plt.hist(y, bins=50, label='Y Variables', orientation='vertical', alpha=0.5)
+plt.title(f'HISTOGRAM PLOT OF X+Y:', fontsize=20)
+plt.xlabel('VALUE (#)', fontsize=20)
+plt.ylabel('FREQUENCY (#)', fontsize=20)
 plt.legend()
 plt.grid()
 plt.show()
@@ -129,10 +129,6 @@ print(df.info())
 #print(df.describe())
 #col_names = df.columns
 #print(col_names)
-
-#%%
-df1 = pd.to_datetime(df, infer_datetime_format=True)
-print(df1.head())
 
 #%%
 # QUESTION 7
@@ -163,12 +159,12 @@ print(f'Sample Pearson Correlation Coefficient between AdBudget & GDP: {ads_gdp_
 # Hint: You need to us the plt.plot().
 
 plt.figure(figsize=(12,12))
-plt.plot(df['Sales'], label='Sales')
-plt.plot(df['AdBudget'], label='AdBudget')
-plt.plot(df['GDP'], label='GDP')
-plt.title(f'LINE PLOT OF SALES / AD BUDGET / GDP:')
-plt.xlabel('DATE / TIME')
-plt.ylabel('VALUE ($)')
+plt.plot(df['Sales'], 'b', label='Sales')
+plt.plot(df['AdBudget'], 'r', label='AdBudget')
+plt.plot(df['GDP'], 'g', label='GDP')
+plt.title(f'LINE PLOT OF SALES / AD BUDGET / GDP:', fontsize=20)
+plt.xlabel('DATE / TIME', fontsize=20)
+plt.ylabel('VALUE ($)', fontsize=20)
 plt.legend(loc='best')
 plt.grid()
 plt.show()
@@ -181,15 +177,12 @@ plt.show()
 # Hint: You need to us the plt.hist().
 
 plt.figure(figsize=(12,12))
-plt.hist(df['Sales'], label='Sales', orientation='vertical')
-plt.hist(df['AdBudget'], label='AdBudget', orientation='vertical')
-plt.hist(df['GDP'], label='GDP', orientation='vertical')
-plt.title(f'HISTOGRAM PLOT OF SALES / AD BUDGET / GDP:')
-#SWITCH THESE
-plt.xlabel('VALUE ($)')
-plt.ylabel('FREQUENCY (#)')
+plt.hist(df['Sales'], color='b', bins=50, label='Sales', orientation='vertical', alpha=0.5)
+plt.hist(df['AdBudget'], color='r', bins=50, label='AdBudget', orientation='vertical', alpha=0.5)
+plt.hist(df['GDP'], color='g', bins=50, label='GDP', orientation='vertical', alpha=0.5)
+plt.title(f'HISTOGRAM PLOT OF SALES / AD BUDGET / GDP', fontsize=20)
+plt.xlabel('VALUE ($)', fontsize=20)
+plt.ylabel('FREQUENCY (#)', fontsize=20)
 plt.legend()
 plt.grid()
 plt.show()
-
-#%%
