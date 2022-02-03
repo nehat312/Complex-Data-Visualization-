@@ -6,9 +6,10 @@
 # LIBRARY IMPORTS
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import pandas_datareader as web
-from tabulate import tabulate
+
+#import matplotlib.pyplot as plt
+#from tabulate import tabulate
 
 # import seaborn as sns
 # from scipy import stats as stats
@@ -32,7 +33,6 @@ end_date = '2021-09-08'
 
 print("\nVARIABLES ASSIGNED")
 
-#%%
 #%%
 # QUESTION 2
 # The database contains the stock values of 6 major giant companies.
@@ -138,7 +138,7 @@ yelp_std = ["YELP", round(np.std(yelp['High']), 2), round(np.std(yelp['Low']), 2
 msft_std = ["MSFT", round(np.std(msft['High']), 2), round(np.std(msft['Low']), 2),
               round(np.std(msft['Open']), 2), round(np.std(msft['Close']), 2),
               round(np.std(msft['Volume']), 2), round(np.std(msft['Adj Close']), 2)]
-#%%
+
 # Calculate variance values for each ticker utilizing NumPy functions
 aapl_var = ["AAPL", round(np.var(aapl['High']), 2), round(np.var(aapl['Low']), 2),
               round(np.var(aapl['Open']), 2), round(np.var(aapl['Close']), 2),
@@ -191,6 +191,16 @@ for df in outputs:
                           np.min(df['Open']), np.min(df['Close']),
                           np.min(df['Volume']), np.min(df['Adj Close']),
                           ]
+# NEED TO LEARN TO INCORPORATE IDX MAX - FOR FUTURE WORKFLOW
+    df.loc['MAX TICKER'] = ['MAXTICKER', np.max(df['High']), np.max(df['Low']),
+                            np.max(df['Open']), np.max(df['Close']),
+                            np.max(df['Volume']), np.max(df['Adj Close'])
+                            ]
+
+    df.loc['MIN TICKER'] = ['MINTICKER', np.min(df['High']), np.min(df['Low']),
+                            np.min(df['Open']), np.min(df['Close']),
+                            np.min(df['Volume']), np.min(df['Adj Close'])
+                            ]
 
 #%%
 # Reset index to display stocks / subtotals
@@ -235,29 +245,13 @@ print(f'VARIANCE VALUES: \n{df_var[:]}')
 
 # QUESTION 8
 # Which company has the maximum & minimum std in each attribute?
+
 # QUESTION 9
 # Which company has the maximum & minimum median in each attribute?
 
-# Please see function below:
-
 # Add a row to the bottom of the table and the display the table on the console.
 
-for df in outputs:
-    #while n < len(df):
-        df.loc['MAX TICKER'] = [df.index, np.max(df['High']), np.max(df['Low']),
-                          np.max(df['Open']), np.max(df['Close']),
-                          np.max(df['Volume']), np.max(df['Adj Close']),
-                          ]
-        df.loc['MIN TICKER'] = [df.index, np.min(df['High']), np.min(df['Low']),
-                          np.min(df['Open']), np.min(df['Close']),
-                          np.min(df['Volume']), np.min(df['Adj Close']),
-                          ]
-
-#%%
-print(f'MEAN VALUES: \n{df_mean[:]}')
-print(f'MEDIAN VALUES: \n{df_median[:]}')
-print(f'STD DEV VALUES: \n{df_std[:]}')
-print(f'VARIANCE VALUES: \n{df_var[:]}')
+# please refer to abve functions incorporating 'MAXTICKER' 'MINTICKER'
 
 #%%
 # QUESTION 10
