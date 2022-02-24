@@ -1,5 +1,5 @@
 #%% [markdown]
-# DATS-6401 - CLASS 2/9/22
+# DATS-6401 - CLASS 2/23/22
 # Nate Ehat
 
 #%%
@@ -20,110 +20,160 @@ print("\nIMPORT SUCCESS")
 
 #%%
 
+sns.set_theme(style='darkgrid') #'whitegrid', 'ticks', 'white', 'dark'
+tips = sns.load_dataset('tips')
+flights = sns.load_dataset('flights')
+diamonds = sns.load_dataset('diamonds')
+penguins = sns.load_dataset('penguins')
 
-fig, ax = plt.subplots(1,1)
-
-labels = ['C', 'C++', 'Java', 'Python', 'PHP']
-score_men = [23, 17, 35, 29, 12]
-score_women = [35, 25, 18, 15, 38]
-explode = [.03, .03, .3, .03, .03]
+print("\nIMPORT SUCCESS")
 
 #%%
-ax.pie(score_men, labels=labels, explode=explode, autopct='%1.2f%%')
-ax.axis('square')
+print(flights.describe())
+print(flights.info())
+
+#%%
+sns.lineplot(data = flights,
+             x = 'year',
+             y = 'passengers',
+             hue = 'month')
 plt.show()
 
 #%%
-plt.figure(figsize=(8,8))
-plt.bar(labels, score_men, label='Men')
-plt.bar(labels, score_women, label='Women', bottom=score_men)
-plt.title('SAMPLE SCORES')
-plt.xlabel('Language')
-plt.ylabel('Score')
+data = np.random.normal(size=(20,6)) + np.arange(6)/2
+sns.boxplot(data=data)
+plt.show()
+
+# CATEGORIES 2+3 have outliers - remove them
+
+#%%
+sns.relplot(data=tips,
+            x='total_bill',
+            y='tip',
+            hue='sex')
+
+plt.show()
+
+#%%
+sns.regplot(data=tips,
+            x='total_bill',
+            y='tip',
+            )
+
+plt.show()
+
+#%%
+sns.boxplot(data=tips[['total_bill', 'tip']])
+
+plt.show()
+#%%
+sns.relplot(data = flights,
+           x = 'year',
+           y = 'passengers',
+           hue = 'month',
+           kind='line'
+           )
+plt.show()
+
+#%%
+sns.relplot(data=tips,
+            x='total_bill',
+            y='tip',
+            kind='scatter',
+            hue='day',
+            col='time'
+            )
+
+plt.show()
+
+#%%
+sns.relplot(data=tips,
+            x='total_bill',
+            y='tip',
+            kind='scatter',
+            hue='day',
+            col='time',
+            row='smoker'
+            )
+
+plt.show()
+
+#%%
+
+df = flights.pivot(index='month', columns='year', values='passengers')
+print(df.head())
+#%%
+sns.heatmap(df, annot=True, fmt='d', cmap='mako', center=df.loc['Jul', 1960]) # #YlGnBu
+plt.show()
+
+#%%
+
+sns.countplot(data=tips,
+              x='day',
+              order=tips['day'].value_counts(ascending=True).index)
+
+plt.show()
+
+#%%
+sns.countplot(data=diamonds,
+              y='clarity',
+              order=diamonds['clarity'].value_counts(ascending=True).index)
+
+plt.show()
+
+#%%
+sns.countplot(data=diamonds,
+              y='color',
+              order=diamonds['color'].value_counts(ascending=True).index,
+              orient='h')
+
+plt.show()
+
+#%%
+#sns.color_palette('tab10')
+sns.color_palette('hls',8)
+
+sns.countplot(data=diamonds,
+              y='cut',
+              order=diamonds['cut'].value_counts(ascending=True).index,
+              orient='h',
+              palette='mako')
+
+plt.show()
+
+
+#%%
+
+#%%
+sns.pairplot(data=penguins, hue='sex', palette='mako')
+plt.show()
+
+#%%
+
+sns.kdeplot(data=tips,
+            x = 'total_bill',
+            bw_adjust=.2,
+            cut=0,
+            hue='time',
+            multiple='stack',
+            ) #fill
+plt.show()
+
+#%%
+sns.countplot(data=tips, x='sex', hue='smoker', palette='mako')
 plt.legend(loc='best')
 plt.show()
 
 #%%
-width = 0.4
-x = np.arange(len(labels))
-ax.bar(x - width/2, score_men, width, label='Men')
-ax.bar(x + width/2, score_women, width, label='Women')
-ax.set_xlabel('Language')
-ax.set_ylabel('Score')
-ax.set_yticks(x)
-ax.set_yticklabels(labels)
-ax.set_title('MEN VS WOMEN')
-ax.legend()
-plt.show()
-
+diamonds.columns
 
 #%%
-np.random.seed(10)
-data = np.random.normal(100, 20, 1000)
-plt.figure()
-plt.boxplot(data)
-plt.xticks([1])
-plt.ylabel('Average')
-plt.xlabel('Data Number')
-plt.grid()
-plt.title('BOXPLOT')
-plt.show()
 
-#%%
-plt.figure()
-plt.hist(data, bins=50)
-plt.show()
+sns.kdeplot(data=diamonds, x='price', log_scale=True, hue='clarity', alpha=0.5)
 
-
-#%%
-np.random.seed(10)
-data1 = np.random.normal(100, 10, 1000)
-data2 = np.random.normal(90, 20, 1000)
-data3 = np.random.normal(80, 30, 1000)
-data4 = np.random.normal(70, 40, 1000)
-data = [data1, data2, data3, data4]
-
-plt.figure()
-plt.boxplot(data)
-plt.xticks([1,2,3,4])
-plt.ylabel('Average')
-plt.xlabel('Data Number')
-plt.grid()
-plt.title('BOXPLOT')
-plt.show()
-
-
-#%%
-plt.figure()
-plt.hist(data, bins=50)
-plt.show()
-
-#%%
-data1 = np.random.normal(0, 1, 1000)
-plt.figure()
-qqplot(data1, line='45')
-plt.title('QQ-PLOT')
-plt.show()
-
-#%%
-plt.figure(figsize=(12,8))
-x = range(1,6)
-y = [1,4,6,8,4]
-plt.plot(x, y, color = 'blue', lw=3)
-plt.fill_between(x, y, label='Area', alpha=.3)
-plt.xlabel('X')
-plt.ylabel('Y')
-plt.title('Simple Area Plot')
-plt.legend(loc='best')
-plt.grid()
 plt.show()
 
 #%%
 
-x = np.linspace(0, 2*np.pi, 41)
-y = np.exp(np.sin(x))
-
-(markers, stemlines, baseline) = plt.stem(y,
-                                          )
-plt.stem(markers, label='exp(sin(x))', color='red')
-plt.setp(baseline, color='gray, lw=2, linestyle='-')
+sns.kdeplot(data=tips, x='total_bill', y='tip', kind='contour')
+plt.show()
