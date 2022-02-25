@@ -204,10 +204,6 @@ print(titanic.head())
 print(titanic.info())
 print(titanic_cols)
 
-#%%
-males = [titanic['sex'] == 'male']
-females =  [titanic['sex'] == 'female']
-
 
 #%%
 # QUESTION 2
@@ -215,52 +211,28 @@ females =  [titanic['sex'] == 'female']
 # Show the number of male and female on the titanic dataset.
 # The final answer should look like bellow.
 
-male_pct = (len(males) / len(titanic['sex'])) * 100
-female_pct = (len(females) / len(titanic['sex'])) * 100
+#male_pct = (len(males) / len(titanic['sex'])) * 100
+#female_pct = (len(females) / len(titanic['sex'])) * 100
 
-
-#%%
-#print(male_pct)
-#print(female_pct)
-count=titanic['sex'].value_counts()
-print(count)
-
-males = (titanic['sex'] == 'male') / count
-print(males)
-
-#%%
-#gender_labels=[male_pct, female_pct]
+males = [titanic['sex'] == 'male']
+females =  [titanic['sex'] == 'female']
 
 explode_mf = [.03, .03]
-
-fig, ax = plt.subplots(1,1)
-ax.pie(titanic.groupby('sex'))#, explode=explode_mf, autopct='%1.2f%%') #, labels=gender_labels,
-plt.title('SALES COUNT PER COLOR IN %', fontsize=21)
-ax.axis('square')
-ax.axis('equal')
-plt.show()
-
-#%%
-
-gender = titanic['sex'].value_counts()
+gender = titanic[['sex']].value_counts()
 colors = ['blue', 'yellow']
-f, (ax1, ax2) = plt.subplots(1, 2)
+#colors = {'male':'blue', 'female':'yellow'}
+f, (ax1) = plt.subplots(1, 1)
 ax1.pie(gender.values.tolist(),
         labels=gender.index.values.tolist(),
         colors=colors,
         startangle=90,
-        autopct='%.1f%%')
+        autopct='%.1f%%',
+        explode=explode_mf)
 ax1.set_title('MALE / FEMALE SPLITS')
 
-
-colors = {'male':'blue', 'female':'yellow'}
-ax2.scatter(data=titanic, x='sex', 
-ax2.set_xlabel('FARE')
-ax2.set_ylabel('AGE')
-ax2.set_title('FARE VS AGE')
-
+#ax.axis('square')
+#ax.axis('equal')
 plt.show()
-
 
 #%%
 # QUESTION 3
@@ -268,14 +240,47 @@ plt.show()
 # percentage of male and female on the titanic dataset.
 # The final answer should look like bellow.
 
+explode_mf = [.03, .03]
+gender = titanic['sex'].value_counts()
+colors = ['blue', 'yellow']
+#colors = {'male':'blue', 'female':'yellow'}
+f, (ax1) = plt.subplots(1, 1)
+ax1.pie(gender.values.tolist(),
+        labels=gender.index.values.tolist(),
+        colors=colors,
+        startangle=90,
+        autopct='%.1f%%',
+        explode=explode_mf)
+ax1.set_title('MALE / FEMALE SPLITS')
+
+#ax.axis('square')
+#ax.axis('equal')
+plt.show()
+
+
 #%%
 # QUESTION 4
 # Write a python program that plot the pie chart showing:
 # percentage of males who survived versus the percentage of males who did not survive.
 # The final answer should look like bellow.
 
-#%%
-# QUESTION 5
+explode_mf = [.03, .03]
+males = titanic[titanic['sex'] == 'male']
+male_survived = males['survived'].value_counts()
+colors = ['blue', 'yellow']
+#colors = {'male':'blue', 'female':'yellow'}
+f, (ax1) = plt.subplots(1, 1)
+ax1.pie(male_survived.values.tolist(),
+        labels=male_survived.index.values.tolist(),
+        colors=colors,
+        startangle=90,
+        autopct='%.1f%%',
+        explode=explode_mf)
+ax1.set_title('MALE SURVIVOR SPLITS')
+
+#ax.axis('square')
+#ax.axis('equal')
+plt.show()
 
 #%%
 # QUESTION 5
@@ -283,11 +288,50 @@ plt.show()
 # Percentage of females who survived versus the percentage of females who did not survive.
 # The final answer should look like bellow.
 
+explode_mf = [.03, .03]
+females = titanic[titanic['sex'] == 'female']
+female_survived = females['survived'].value_counts()
+colors = ['blue', 'yellow']
+#colors = {'male':'blue', 'female':'yellow'}
+f, (ax1) = plt.subplots(1, 1)
+ax1.pie(female_survived.values.tolist(),
+        labels=female_survived.index.values.tolist(),
+        colors=colors,
+        startangle=90,
+        autopct='%.1f%%',
+        explode=explode_mf)
+ax1.set_title('FEMALE SURVIVOR SPLITS')
+
+#ax.axis('square')
+#ax.axis('equal')
+plt.show()
+
 #%%
 # QUESTION 6
 # Write a python program that plot the pie chart showing:
 # Percentage passengers with first class, second class and third-class tickets.
 # The final answer should look like bellow.
+
+explode_mf = [.03, .03]
+pclass1 = titanic[titanic['pclass'] == 1]
+pclass2 = titanic[titanic['pclass'] == 2]
+pclass3 = titanic[titanic['pclass'] == 3]
+pclass123 = [pclass1, pclass2, pclass3]
+#female_survived = females['survived'].value_counts()
+colors = ['blue', 'yellow', 'pink']
+#colors = {'male':'blue', 'female':'yellow'}
+f, (ax1) = plt.subplots(1, 1)
+ax1.pie(titanic['pclass'].unique(),
+        #labels=titanic['pclass'].index.values.tolist(),
+        colors=colors,
+        startangle=90,
+        autopct='%.1f%%')
+        #explode=explode_mf)
+ax1.set_title('P-CLASS SPLITS')
+
+#ax.axis('square')
+#ax.axis('equal')
+plt.show()
 
 #%%
 # QUESTION 7
@@ -295,17 +339,73 @@ plt.show()
 # Survival percentage rate based on the ticket class.
 # The final answer should look like bellow.
 
+explode_mf = [.03, .03]
+survived = titanic[titanic['survived'] == 1]
+pclass_surv = survived['pclass'].value_counts()
+colors = ['blue', 'yellow', 'pink']
+#colors = {'male':'blue', 'female':'yellow'}
+f, (ax1) = plt.subplots(1, 1)
+ax1.pie(pclass_surv.unique(),
+        labels=survived['pclass'].unique(),
+        colors=colors,
+        startangle=90,
+        autopct='%.1f%%')
+        #explode=explode_mf)
+ax1.set_title('P-CLASS SURVIVOR SPLITS')
+
+#ax.axis('square')
+#ax.axis('equal')
+plt.show()
+
+
 #%%
 # QUESTION 8
 # Write a python program that plot the pie chart showing:
 # Percentage passengers who survived versus the percentage of passengers who did not survive with the first-class ticket category.
 # The final answer should look like bellow.
 
+explode_mf = [.03, .03]
+survived = titanic[titanic['survived'] == 1]
+pclass1_surv = survived[survived['pclass'] == 1].value_counts()
+colors = ['blue', 'yellow']
+#colors = {'male':'blue', 'female':'yellow'}
+f, (ax1) = plt.subplots(1, 1)
+ax1.pie(pclass1_surv.unique(),
+        labels=titanic['survived'].unique(),
+        colors=colors,
+        startangle=90,
+        autopct='%.1f%%')
+        #explode=explode_mf)
+ax1.set_title('P-CLASS 1 SURVIVOR SPLITS')
+
+#ax.axis('square')
+#ax.axis('equal')
+plt.show()
+
+
 #%%
 # QUESTION 9
 # Write a python program that plot the pie chart showing:
 # Percentage passengers who survived versus the percentage of passengers who did not survive with the second-class ticket category.
 # The final answer should look like bellow.
+
+
+explode_mf = [.03, .03]
+pclass2_surv = survived[survived['pclass'] == 2].value_counts()
+colors = ['blue', 'yellow']
+#colors = {'male':'blue', 'female':'yellow'}
+f, (ax1) = plt.subplots(1, 1)
+ax1.pie(pclass2['survived'].unique(),
+        labels=titanic['survived'].unique(),
+        colors=colors,
+        startangle=90,
+        autopct='%.1f%%')
+        #explode=explode_mf)
+ax1.set_title('P-CLASS 2 SURVIVOR SPLITS')
+
+#ax.axis('square')
+#ax.axis('equal')
+plt.show()
 
 #%%
 # QUESTION 10
@@ -314,12 +414,34 @@ plt.show()
 # Percentage of passengers who did not survive in the third-class ticket category.
 
 
+explode_mf = [.03, .03]
+pclass3_surv = survived[survived['pclass'] == 3].value_counts()
+colors = ['blue', 'yellow', 'pink']
+#colors = {'male':'blue', 'female':'yellow'}
+f, (ax1) = plt.subplots(1, 1)
+ax1.pie(pclass3['survived'].unique(),
+        labels=titanic['survived'].unique(),
+        colors=colors,
+        startangle=90,
+        autopct='%.1f%%')
+        #explode=explode_mf)
+ax1.set_title('P-CLASS 3 SURVIVOR SPLITS')
+
+#ax.axis('square')
+#ax.axis('equal')
+plt.show()
 #%%
 # QUESTION 11
 # Using the matplotlib and plt.subplots create a dashboard
 # include all the pie charts above.
 # Note: Use the figure size = (16,8).
 # The final answer should look like the following.
+
+plt.figure(figsize=(16,8))
+sns.pairplot(titanic)
+#plt.tight_layout()
+plt.show()
+
 
 
 #%%
