@@ -17,6 +17,8 @@ import dash as dash
 from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
+from scipy.fft import fft
+from dash.exceptions import PreventUpdate
 
 import plotly as ply
 import plotly.express as px
@@ -33,53 +35,34 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 print("\nSUCCESS")
 
 #%%
-# DASH APP 1
-
-# Assign app name
-fresh_app = dash.Dash('HW4', external_stylesheets=external_stylesheets)
-
-# Define app layout
-fresh_app.layout = html.Div([html.H1('HOMEWORK #4', style={'textAlign':'center'}),
-                             html.Br(),
-                             dcc.Tabs(id='hw-questions',
-                                      children=[
-                                          dcc.Tab(label='Question 1', value='q1'),
-                                          #dcc.Tab(label='Question 2', value='q2'),
-                                          #dcc.Tab(label='Question 3', value='q3'),
-                                      ]),
-                             html.Div(id='layout')
-
-                             ])
-
-q1_layout = html.Div([
-    html.H1('DATAVIZ Q1'),
-    html.H5('SOLUTION'),
-    html.P('INPUT:'),
-    dcc.Input(id='input1', type='text'),
-    html.P('OUTPUT:'),
-    html.Div(id='output-q1'),
-])
-
-@fresh_app.callback(
-    dash.dependencies.Output(component_id='output-q1', component_property='children'),
-    [dash.dependencies.Input(component_id='input1', component_property='value')]
-)
-
-def output_calc(respuesta):
-    return f'THE OUTPUT VALUE IS: {respuesta}'
-
-
-fresh_app.run_server(
-    port = 8030,
-    host = '0.0.0.0',
-    #debug = True
-)
-
-#%%
 
 # 1. Using Dash write a program that creates an input field and displays the entered data as text on the line below.
     # You need to create a callback function for the exercise.
     # Then deploy the created App through GCP and provide the working world web address into your report.
+
+hw4_app = dash.Dash('HOMEWORK 4', external_stylesheets=external_stylesheets)
+
+hw4_app.layout = html.Div([html.H1('HOMEWORK 4', style={'textAlign': 'center'}),
+                          html.Br(),
+                          dcc.Tabs(id='hw-questions',
+                                   children=[
+                                       dcc.Tab(label='QUESTION 1', value='q1'),
+                                       dcc.Tab(label='QUESTION 2', value='q2'),
+                                       dcc.Tab(label='QUESTION 3', value='q3')]),
+                          html.Div(id='layout')])
+
+q1_layout = html.Div([html.H1('Question 1'),
+                             html.H5('Change the value in the textbox to see callbacks in action!'),
+                             html.P('Input:'),
+                             dcc.Input(id='input1',type='text'),
+                             html.P(id='output1')
+                             ])
+
+
+@hw4_app.callback(Output(component_id='output1', component_property='children'),
+                 [Input(component_id='input1', component_property='value')])
+def update_q1(text):
+    return f'The output value is "{text}"'
 
 # 2. Using Dash create an app that user can input the following:
     # a. Number of cycles of sinusoidal.
@@ -93,7 +76,39 @@ fresh_app.run_server(
 # from scipy.fft import fft
 # Then deploy the created App through GCP and provide the working web address into your report.
 
-from scipy.fft import fft
+q2_layout = html.Div([html.H1('Question 2'),
+                             html.H6('Please enter the number of sinusoidal cycle'),
+                             dcc.Input(id='ip1',type='number'),
+                             html.H6('Please enter the mean of white noise'),
+                             dcc.Input(id='ip2',type='number'),
+                             html.H6('Please enter the standard deviation of the white noise'),
+                             dcc.Input(id='ip3',type='number'),
+                             html.H6('Please enter the number of samples'),
+                             dcc.Input(id='ip4',type='number'),
+                             dcc.Graph(id='gph1'),
+                             html.H6('The Fast Fourier Transform of Above Generated Data'),
+                             dcc.Graph(id='gph2'),
+                             ])
+
+
+@hw4_app.callback([Output(component_id='gph1', component_property='figure'),
+                 Output(component_id='gph2', component_property='figure')],
+                 [Input(component_id='ip1', component_property='value'),
+                  Input(component_id='ip2', component_property='value'),
+                  Input(component_id='ip3', component_property='value'),
+                  Input(component_id='ip4', component_property='value')])
+
+def update_q2(b, m, std, n):
+    if (b == None) | (m == None) | (std==None) | (n==None):
+        raise PreventUpdate
+    else:
+        x = np.linspace(-np.pi,np.pi,n)
+        noise = np.random.normal(m,std,n)
+        y = np.sin(b*x) + noise
+        f = abs(fft(y,n))
+        fig1 = px.line(x=x, y=y)
+        fig2 = px.line(x=x, y=f)
+        return fig1, fig2
 
 # 3. Using Dash create a drop-down menu with the items listed below.
 # Once one of the items is selected, then a message should display:
@@ -110,208 +125,46 @@ from scipy.fft import fft
     # h. Web-based App using Dash
     # i. Tableau
 
-
-
-#%%
-## CLASS REFERENCE
-
-q1_layout = html.Div([
-    html.H1('DATAVIZ Q1'),
-    html.H5('SOLUTION'),
-    html.P('INPUT:'),
-    dcc.Input(id='input1', type='text'),
-    html.P('OUTPUT:'),
-    html.Div(id='output-q1'),
-])
-
-q2_layout = html.Div([
-    html.H1('DATAVIZ Q2'),
-    dcc.Dropdown(id='drop-q2',
-                 options=[
-                     {'label':'Kyle Kuzma', 'value':'Kyle Kuzma'},
-                     {'label':'LeBron James', 'value':'LeBron James'},
-                 ], value='Kyle Kuzma'),
-
-    html.Br('OUTPUT:'),
-    html.Div(id='output-q2')
-])
-
 q3_layout = html.Div([
-    html.H1('DATAVIZ Q3'),
-    dcc.Checklist(id='checklist-q3',
-                 options=[
-                     {'label':'A', 'value':'A'},
-                     {'label':'B', 'value':'B'},
-                     {'label':'C', 'value':'C'},
-                 ], value=''),
-
-    html.Br('OUTPUT:'),
-    html.Div(id='output-q3')
+    html.H1('Complex Data Visualization'),
+    dcc.Dropdown(id='drop3',
+                 options=[{'label': 'Introduction', 'value': 'Introduction'},
+                          {'label': 'Pandas Package', 'value': 'Pandas Package'},
+                          {'label': 'Seaborn Package', 'value': 'Seaborn Package'},
+                          {'label': 'Matplotlib Package', 'value': 'Matplotlib Package'},
+                          {'label': 'Principal Component Analysis', 'value': 'Principal Component Analysis'},
+                          {'label': 'Outlier Detection', 'value': 'Outlier Detection'},
+                          {'label': 'Interactive Visualization', 'value': 'Interactive Visualization'},
+                          {'label': 'Web-based App using Dash', 'value': 'Web-based App using Dash'},
+                          {'label': 'Tableau', 'value': 'Tableau'}],
+                 value='Introduction'),
+    html.Br(),
+    html.Div(id='output3')
 ])
 
-@fresh_app.callback(
-    Output(component_id='layout', component_property='children'),
-    [Input(component_id='hw-questions', component_property='value')]
-)
+@hw4_app.callback(Output(component_id='output3', component_property='children'),
+                 [Input(component_id='drop3', component_property='value')])
+def update_q3(input):
+    return f'The selected item inside the dropdown menu is {input}'
 
-def update_layout(pregunta):
-    if pregunta == 'q1':
+# APP CALLBACK
+
+@hw4_app.callback(Output(component_id='layout', component_property='children'),
+                 [Input(component_id='hw-questions', component_property='value')])
+
+def update_layout(ques):
+    if ques == 'q1':
         return q1_layout
-    elif pregunta == 'q2':
+    elif ques == 'q2':
         return q2_layout
-    elif pregunta == 'q3':
+    elif ques == 'q3':
         return q3_layout
 
-@fresh_app.callback(
-    dash.dependencies.Output(component_id='output-q1', component_property='children'),
-    [dash.dependencies.Input(component_id='input1', component_property='value')]
+# INITIALIZE SERVER
+hw4_app.run_server(
+    port=8035,
+    host='0.0.0.0'
 )
-
-def output_calc(respuesta):
-    return f'{respuesta}'
-
-@fresh_app.callback(
-    dash.dependencies.Output(component_id='output-q2', component_property='children'),
-    [dash.dependencies.Input(component_id='drop-q2', component_property='value')]
-)
-
-def output_calc(player):
-    if player == 'Kyle Kuzma':
-        return f'{player} is an MVP candidate'
-    elif player == 'LeBron James':
-        return f'{player} needs to retire'
-
-@fresh_app.callback(
-    dash.dependencies.Output(component_id='output-q3', component_property='children'),
-    [dash.dependencies.Input(component_id='checklist-q3', component_property='value')]
-)
-
-def q3_calc(choice):
-    if choice == 'A':
-        return f'{choice} is NOT CORRECT'
-    elif choice == 'B':
-        return f'{choice} is NOT CORRECT'
-    elif choice == 'C':
-        return f'{choice} is CORRECT'
-
-fresh_app.run_server(
-    port = 8030,
-    host = '0.0.0.0',
-    #debug = True
-)
-
-
-
-
-
-#%%
-
-#%%
-
-#%%
-## CLASS REFERENCE
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-
-# Assign app name
-new_app = dash.Dash('Complex Data Viz', external_stylesheets=external_stylesheets)
-
-# Define app layout
-new_app.layout = html.Div([
-    dcc.Slider(
-        id = 'my-slider',
-        min = 0,
-        max = 20,
-        step = 2,
-        value = 10
-    ),
-
-html.Div(id='slider-output-container')
-
-])
-@new_app.callback(
-    Output(component_id='slider-output-container', component_property='children'),
-    [Input(component_id='my_slider', component_property='value')]
-)
-
-def update_nate(value):
-    return f'You Have Selected {value}'
-
-new_app.run_server(
-    port = 8150,
-    host = '0.0.0.0',
-    #debug = True
-)
-
-
-
-
-#%%
-## CLASS REFERENCE - NORMAL DIST
-#%%
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-
-# Assign app name
-new_app = dash.Dash('Complex Data Viz', external_stylesheets=external_stylesheets)
-
-#html.Div(id='slider-output-container')
-
-# Define app layout
-new_app.layout = html.Div([
-    dcc.Graph(id = 'my-graph'),
-    html.P('Mean'),
-    dcc.Slider(id = 'mean', min = -3, max = 3, value = 0,
-               marks={-3:'-3', -2:'-2', -1:'-1', 0:'0', 1:'1', 2:'2', 3:'3'}),
-
-    html.Br(),
-    html.P('std'),
-    dcc.Slider(id = 'std', min = 1, max = 3, value = 1,
-               marks={1:'1', 2:'2', 3:'3'}),
-
-    html.Br(),
-    html.P('Number of Samples'),
-    dcc.Slider(id = 'size', min = 1, max = 10000, value = 100,
-               marks={100:'100', 500:'500', 1000:'1000', 5000:'5000'}),
-
-    html.Br(),
-    html.P('Number of Bins'),
-    dcc.Dropdown(id = 'bins',
-                 options = [
-                     {'label':20, 'value':20},
-                     {'label':30, 'value':30},
-                     {'label':40, 'value':40},
-                     {'label':60, 'value':60},
-                     {'label':80, 'value':80},
-                     {'label':100, 'value':100},
-                 ], value = 20
-                 )
-
-])
-
-@new_app.callback(
-    Output(component_id='my-graph', component_property='figure'),
-    [Input(component_id='mean', component_property='value'),
-     Input(component_id='std', component_property='value'),
-     Input(component_id='bins', component_property='value'),
-     Input(component_id='size', component_property='value')
-     ]
-)
-
-def display_color(mean, std, bins, size):
-    x = np.random.normal(mean, std, size=size)
-    fig = px.histogram(x = x, nbins = bins, range_x = [-5, 5])
-    return fig
-
-new_app.run_server(
-    port = 8110,
-    host = '0.0.0.0',
-    #debug = True
-)
-
-
-
-
-#%%
-
 
 #%%
 
