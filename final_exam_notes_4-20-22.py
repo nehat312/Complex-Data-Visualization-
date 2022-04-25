@@ -10,28 +10,35 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly as ply
 import plotly.express as px
-import pandas_datareader as web
+
+import dash as dash
+from dash import dcc
+from dash import html
+from dash.dependencies import Input, Output
+from dash.exceptions import PreventUpdate
+import dash_bootstrap_components as dbc
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from statsmodels.graphics.gofplots import qqplot
+import scipy.stats as st
 
-# from scipy import stats as stats
 # import statistics
 # import datetime as dt
-
+# import pandas_datareader as web
 
 print("\nIMPORT SUCCESS")
 
 #%%
 # DATA IMPORTS
-
 iris = sns.load_dataset('iris')
 auto = pd.read_csv('/Users/nehat312/GitHub/Complex-Data-Visualization-/autos.clean.csv')
 tips = sns.load_dataset('tips')
 flights = sns.load_dataset('flights')
 diamonds = sns.load_dataset('diamonds')
 penguins = sns.load_dataset('penguins')
+
+print("\nIMPORT SUCCESS")
 
 #%%
 # LOAD DATA
@@ -46,6 +53,8 @@ print(df.info())
 X = df[features].values
 X = StandardScaler().fit_transform(X)
 
+print("\nDATA SCALED")
+
 #%%
 # PRINCIPAL COMPONENT ANALYSIS
 pca = PCA(n_components='mle', svd_solver='full') # 'mle'
@@ -57,6 +66,7 @@ print('TRANSFORMED DIMENSIONS:', X_PCA.shape)
 print(f'EXPLAINED VARIANCE RATIO: {pca.explained_variance_ratio_}')
 
 #%%
+# PLOT PCA EXPLAINED VARIANCE CURVE
 x = np.arange(1, len(np.cumsum(pca.explained_variance_ratio_))+1, 1)
 
 plt.figure(figsize=(12,8))
@@ -64,8 +74,6 @@ plt.plot(x, np.cumsum(pca.explained_variance_ratio_))
 plt.xticks(x)
 
 plt.show()
-
-#%%
 
 #%%
 # AUTO DATASET
@@ -83,11 +91,9 @@ Y = auto['price']
 print(X)
 
 #%%
-
 X = StandardScaler().fit_transform(X)
 
 #%%
-
 # pca = PCA(n_components='mle', svd_solver='full') # 'mle'
 pca = PCA(n_components=7, svd_solver='full') # 'mle'
 
@@ -151,14 +157,12 @@ df_PCA.info()
 
 #%%
 
-
-
+qqplot(df['traffic_volume'])
+plt.title("QQ-plot of traffic volume ")
+plt.show()
 
 
 #%%
-
-
-
 
 
 #%%
@@ -170,7 +174,7 @@ da_testtv = st.normaltest(df['traffic_volume'])
 da_testt = st.normaltest(df['temp'])
 shapiro_testtv = st.shapiro(df['traffic_volume'])
 shapiro_testt = st.shapiro(df['temp'])
-import dash_bootstrap_components as dbc
+
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.layout = html.Div([html.H1('test', style={'textAlign':'center'}),
                          dcc.Graph(id="my_graph"),
