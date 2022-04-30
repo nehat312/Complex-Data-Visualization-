@@ -182,6 +182,8 @@ def discrete_background_color_bins(tr_df, n_bins=5, columns='all'):
 
 #print(styles)
 
+#%%
+
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 ncaab_app = dash.Dash('NCAAM BASKETBALL DASHBOARD') #, external_stylesheets=external_stylesheets
 application = ncaab_app.server
@@ -189,34 +191,41 @@ application = ncaab_app.server
 #app = Dash(__name__)
 
 # {current_time:%Y-%m-%d %H:%M}
-#'backgroundColor': 'rgb(220, 220, 220)',
 
-ncaab_app.layout = html.Div([html.H1('NCAAM BASKETBALL DASHBOARD', style={'textAlign': 'Center', 'backgroundColor': 'rgb(223,187,133)', 'color': 'black', 'fontWeight': 'bold', 'border': '4px solid black'}),
-                     #html.Br(),
-                     # html.Br(),
-                          dcc.Tabs(id='ncaa-tabs',
-                                   children=[
-                                       dcc.Tab(label='TEAM-VIZ', value='team-viz'),
-                                       dcc.Tab(label='STAT-VIZ', value='stat-viz'),
-                                       dcc.Tab(label='CAT-VIZ', value='cat-viz'),
 
-                               dash_table.DataTable(tr_df.to_dict('records'),
+ncaab_app.layout = html.Div([html.H1('NCAAM BASKETBALL DASHBOARD',
+                                     style={'textAlign': 'Center', 'backgroundColor': 'rgb(223,187,133)',
+                                            'color': 'black', 'fontWeight': 'bold', 'border': '4px solid black'}),
+                             dcc.Tabs(id='ncaa-tabs',
+                                      children=[
+                                          dcc.Tab(label='TEAM-VIZ', value='team-viz'),
+                                          dcc.Tab(label='STAT-VIZ', value='stat-viz'),
+                                          dcc.Tab(label='CAT-VIZ', value='cat-viz')]),
+                             html.Div(id='dash-layout')])
+
+
+team_viz_layout = dash_table.DataTable(tr_df.to_dict('records'),
                                                     columns=[{"name": i, "id": i} for i in tr_df.columns],
                                                     id='tr-df',
                                                     style_data={'textAlign': 'Center', 'fontWeight': 'bold', 'border': '2px solid black'},
                                                     style_cell={'textAlign': 'Center', 'fontWeight': 'bold', 'padding': '5px'},   #324f6e - TBD  #B10DC9 - fuschia #7FDBFF - Aqua
                                                     style_header={'backgroundColor': '#7FDBFF', 'color': 'black', 'fontWeight': 'bold', 'border': '2px solid black'}, #'1px solid blue'
                                                     sort_action='native',
-                                                    style_data_conditional = [styles]
+                                                    style_data_conditional = [styles],
+                                                 ),
 
-                                                    ),
-                                         ]),
-                               html.Br(),
-                               html.P('METRIC COMPARISON'),
-                               dcc.Graph(id='chart'),
-                               html.Br(),
-                               html.P('STAT A'),
-                               dcc.Dropdown(id='stata',
+
+@ncaab_app.callback(Output(component_id='tr-df', component_property='value'))
+
+def display_dataframe(dataframe):
+    return dataframe
+
+
+stat_viz_layout = html.Div([html.H1('METRIC COMPARISON'),
+                  dcc.Graph(id='chart'),
+                  html.Br(),
+                  html.P('STAT A'),
+                  dcc.Dropdown(id='stata',
                                             options=[{'label': 'WIN%', 'value': 'WIN%'},
                                                      #{'label': 'AVG_MARGIN', 'value': 'AVG_MARGIN'},
                                                      #{'label': 'OFF_EFF', 'value': 'OFF_EFF'},
@@ -230,51 +239,75 @@ ncaab_app.layout = html.Div([html.H1('NCAAM BASKETBALL DASHBOARD', style={'textA
                                                      #{'label': 'TREB%', 'value': 'TREB%'},
                                                      #{'label': 'STL+BLK/GM', 'value': 'STL+BLK/GM'},
                                                      #{'label': 'OPP_STL+BLK/GM', 'value': 'OPP_STL+BLK/GM'},
-                                                    ], value='WIN%'
-                                            ),
-                               html.Br(),
-                               html.P('STAT B'),
-                               dcc.Dropdown(id='statb',
-                                            options=[{'label': 'WIN%', 'value': 'WIN%'},
-                                                     #{'label': 'AVG_MARGIN', 'value': 'AVG_MARGIN'},
-                                                     #{'label': 'OFF_EFF', 'value': 'OFF_EFF'},
-                                                     #{'label': 'DEF_EFF', 'value': 'DEF_EFF'},
-                                                     {'label': 'EFG%', 'value': 'EFG%'},
-                                                     {'label': 'TS%', 'value': 'TS%'},
+                                                    ], value='WIN%'), #, clearable=False
+                           ])
+
+@ncaab_app.callback(#Output(component_id='chart', component_property='figure'),
+                    [Input(component_id='stata', component_property='value'),])
+
+
+def display_chart(stata): #
+    fig = px.scatter(tr_df, x='WIN%', y=[stata])
+    return fig
+
+cat_viz_layout = html.Div([html.H1('STAT B'),
+                  dcc.Dropdown(id='statb',
+                               options=[{'label': 'WIN%', 'value': 'WIN%'},
+                                        {'label': 'EFG%', 'value': 'EFG%'},
+                                        {'label': 'TS%', 'value': 'TS%'},
                                                      {'label': 'OPP_EFG%', 'value': 'OPP_EFG%'},
                                                      {'label': 'OPP_TS%', 'value': 'OPP_TS%'},
                                                      {'label': 'AST/TO', 'value': 'AST/TO'},
                                                      {'label': 'OPP_AST/TO', 'value': 'OPP_AST/TO'},
+                                        #{'label': 'AVG_MARGIN', 'value': 'AVG_MARGIN'},
+                                                     #{'label': 'OFF_EFF', 'value': 'OFF_EFF'},
+                                                     #{'label': 'DEF_EFF', 'value': 'DEF_EFF'},
                                                      #{'label': 'TREB%', 'value': 'TREB%'},
                                                      #{'label': 'STL+BLK/GM', 'value': 'STL+BLK/GM'},
                                                      #{'label': 'OPP_STL+BLK/GM', 'value': 'OPP_STL+BLK/GM'},
-                                                    ], value='WIN%'
-                                            ),
-                               html.Br(),
+                                                    ], value='WIN%'),
+                           ])
 
-                               html.Div(id='dashboard-layout')])
+@ncaab_app.callback(#Output(component_id='chart', component_property='figure'),
+                    #[Input(component_id='stata', component_property='value'),
+                     [Input(component_id='statb', component_property='value')])
 
-@ncaab_app.callback(Output(component_id='layout', component_property='children'),
+
+def display_chart(statb): #
+    fig = px.scatter(tr_df, x='WIN%', y=[statb])
+    return fig
+
+#html.Div(id='dashboard-layout')])
+
+@ncaab_app.callback(Output(component_id='tab-layout', component_property='children'),
                       #Output(component_id='tr-df', component_property='figure'),
                       #Output(component_id='chart', component_property='figure'),
-                      #[Input(component_id='stata', component_property='value'),
+                      #][Input(component_id='stata', component_property='value'),
                        #Input(component_id='statb', component_property='value')]
  )
 
 def display_dataframe(dataframe):
     return dataframe
 
-@ncaab_app.callback(Output(component_id='chart', component_property='figure'),
-                    [Input(component_id='stata', component_property='value'),
-                     Input(component_id='statb', component_property='value')])
+@ncaab_app.callback(Output(component_id='dash-layout', component_property='children'),
+                 [Input(component_id='ncaa-tabs', component_property='value')])
 
-
-def display_chart(statb): #stata,
-    fig = px.scatter(tr_df, x='WIN%', y=[statb])
-    return fig
+def update_layout(tab):
+    if tab == 'team-viz':
+        return team_viz_layout
+    elif tab == 'stat-viz':
+        return stat_viz_layout
+    elif tab == 'cat-viz':
+        return cat_viz_layout
 
 if __name__ == '__main__':
     application.run(host='0.0.0.0', port=8050)
+
+
+#Output(component_id='tr-df', component_property='figure'),
+                      #Output(component_id='chart', component_property='figure'),
+                      #[Input(component_id='stata', component_property='value'),
+                       #Input(component_id='statb', component_property='value')]
 
 
 #%%
@@ -527,24 +560,6 @@ tourney_teams_dict = {1:['Gonzaga',  'Arizona', 'Kansas', 'Baylor'], #1
 tr_df['SEED'] = tr_df['Team'].map(tourney_teams_dict)
 print(tr_df['SEED'].isnull().sum())
 
-
-#%%
-import dash
-import dash_html_components as html
-import base64
-
-app = dash.Dash()
-
-
-image_filename = '/NBA-logo.png'
-encoded_image = base64.b64encode(open(image_filename, 'rb').read())
-
-app.layout = html.Div([
-    html.Img(src='data:image/png;base64,{}'.format(encoded_image))
-])
-
-if __name__ == '__main__':
-    app.run_server(debug=True)
 
 
 #%%
