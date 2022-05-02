@@ -45,50 +45,58 @@ tr_df = pd.read_excel(tr_filepath + '.xlsx') #index_col='Team'
 kp_df = pd.read_excel(kp_filepath + '.xlsx') #index_col='Team'
 #kp_df = pd.read_csv(kp_filepath + '.csv')
 
+print("\nIMPORT SUCCESS")
+
+#%%
+# FINAL PRE-PROCESSING
+tr_df['opponent-stocks-per-game'] = tr_df['opponent-blocks-per-game'] + tr_df['opponent-steals-per-game']
 tr_df = tr_df.round(2)
-#tr_df = pd.to_numeric(tr_df)
 
 print(tr_df.head())
 
 #%%
+
 print(tr_df.info())
+
 #print(kp_df.info())
 #print(tr_df.index)
 #print(tr_df)
 
 #%%
 tr_df = tr_df[['Team', 'win-pct-all-games',
-               'average-scoring-margin', 'opponent-average-scoring-margin',
+               'average-scoring-margin', #'opponent-average-scoring-margin',
                'points-per-game', 'opponent-points-per-game',
                'offensive-efficiency', 'defensive-efficiency', 'net-adj-efficiency',
-               'effective-field-goal-pct', 'true-shooting-percentage',
+               'effective-field-goal-pct', 'opponent-effective-field-goal-pct',
+               #'true-shooting-percentage',  #'opponent-true-shooting-percentage',
                'three-point-pct', 'two-point-pct', 'free-throw-pct',
-               'opponent-effective-field-goal-pct', 'opponent-true-shooting-percentage',
                'opponent-three-point-pct', 'opponent-two-point-pct', 'opponent-free-throw-pct',
-               'assists-per-game', 'turnovers-per-game',
-               'opponent-assists-per-game', 'opponent-turnovers-per-game',
+               'assists-per-game', 'opponent-assists-per-game',
+               #'turnovers-per-game', 'opponent-turnovers-per-game',
                'assist--per--turnover-ratio', 'opponent-assist--per--turnover-ratio',
-               'blocks-per-game', 'steals-per-game', 'stocks-per-game',
-               'opponent-blocks-per-game','opponent-steals-per-game'
+               'stocks-per-game', 'opponent-stocks-per-game',
+               #'blocks-per-game', 'steals-per-game',
+               #'opponent-blocks-per-game','opponent-steals-per-game',
                ]]
 
 
 print(tr_df.info())
 
-
 #%%
 # RENAME COLUMNS TO IMPROVE APP OPTICS
 app_cols = {'Team': 'TEAM', 'win-pct-all-games':'WIN%',
-            'average-scoring-margin':'AVG_MARGIN', 'opponent-average-scoring-margin':'OPP_AVG_MARGIN',
+            'average-scoring-margin':'AVG_MARGIN', #'opponent-average-scoring-margin':'OPP_AVG_MARGIN',
             'points-per-game': 'PTS/GM',  'opponent-points-per-game':'OPP_PTS/GM',
-            'offensive-efficiency':'O_EFF', 'defensive-efficiency':'D_EFF', 'net-adj-efficiency':'NET_ADJ_EFF',
-            'effective-field-goal-pct':'EFG%', 'true-shooting-percentage':'TS%',
+            'offensive-efficiency':'O_EFF', 'defensive-efficiency':'D_EFF', 'net-adj-efficiency':'NET_EFF',
+            'effective-field-goal-pct':'EFG%', #'true-shooting-percentage':'TS%',
+            'opponent-effective-field-goal-pct':'OPP_EFG%', #'opponent-true-shooting-percentage':'OPP_TS%',
             'three-point-pct':'3P%', 'two-point-pct':'2P%', 'free-throw-pct':'FT%',
-            'opponent-effective-field-goal-pct':'OPP_EFG%', 'opponent-true-shooting-percentage':'OPP_TS%',
-            'assists-per-game':'AST/GM', 'turnovers-per-game':'TO/GM', 'assist--per--turnover-ratio':'AST/TO',
-            'opponent-assists-per-game':'OPP_AST/GM', 'opponent-turnovers-per-game':'OPP_TO/GM', 'opponent-assist--per--turnover-ratio':'OPP_AST/TO',
-            'blocks-per-game':'B/GM', 'steals-per-game':'S/GM', 'stocks-per-game':'STOCKS/GM',
-            'opponent-blocks-per-game':'OPP_BLK/GM', 'opponent-steals-per-game':'OPP_STL/GM',# 'opponent-stocks-per-game':'OPP_STL/GM',
+            'opponent-three-point-pct':'OPP_3P%', 'opponent-two-point-pct':'OPP_2P%', 'opponent-free-throw-pct':'OPP_FT%',
+            'assists-per-game':'AST/GM', 'opponent-assists-per-game':'OPP_AST/GM',
+            'assist--per--turnover-ratio':'AST/TO', 'opponent-assist--per--turnover-ratio':'OPP_AST/TO',
+            'stocks-per-game':'S+B/GM', 'opponent-stocks-per-game':'OPP_S+B/GM',
+            #'turnovers-per-game':'TO/GM', 'opponent-turnovers-per-game':'OPP_TO/GM',
+            #'opponent-blocks-per-game':'OPP_BLK/GM', 'opponent-steals-per-game':'OPP_STL/GM', 'blocks-per-game':'B/GM', 'steals-per-game':'S/GM',
             }
 
 
@@ -110,16 +118,15 @@ tr_cols = {'Team': 'TEAM', 'points-per-game':'PTS/GM', 'average-scoring-margin':
             'opponent-blocks-per-game':'OPP_BLK/GM', 'opponent-steals-per-game':'OPP_STL/GM',
             'opponent-effective-possession-ratio':'OPP_POSS%',
             'net-avg-scoring-margin':'NET_AVG_MARGIN', 'net-points-per-game':'NET_PTS/GM',
-            'net-adj-efficiency':'NET_ADJ_EFF',
+            'net-adj-efficiency':'NET_EFF',
             'net-effective-field-goal-pct':'NET_EFG%', 'net-true-shooting-percentage':'NET_TS%',
-            'stocks-per-game':'STOCKS/GM', 'total-turnovers-per-game':'TTL_TO/GM',
+            'stocks-per-game':'S+B/GM', 'opponent-stocks-per-game':'OPP_S+B/GM', 'total-turnovers-per-game':'TTL_TO/GM',
             'net-assist--per--turnover-ratio':'NET_AST/TO',
             'net-total-rebounds-per-game':'NET_TREB/GM', 'net-off-rebound-pct':'NET_OREB%', 'net-def-rebound-pct':'NET_DREB%'
             }
 
 
 #%%
-#tr_df['VISITOR_CODE'] = matchup_history['VISITOR'].map(team_code_dict)
 tr_df.columns = tr_df.columns.map(app_cols)
 
 print(tr_df.columns)
@@ -127,16 +134,16 @@ print(tr_df.info())
 
 #%%
 
-def discrete_background_color_bins(tr_df, n_bins=5, columns='all'):
+def discrete_background_color_bins(df, n_bins=5, columns='PTS/GM'):
     import colorlover
     bounds = [i * (1.0 / n_bins) for i in range(n_bins + 1)]
     if columns == 'all':
         if 'id' in tr_df:
-            df_numeric_columns = tr_df.select_dtypes('number').drop(['id'], axis=1)
+            df_numeric_columns = df.select_dtypes('number').drop(['id'], axis=1)
         else:
-            df_numeric_columns = tr_df.select_dtypes('number')
+            df_numeric_columns = df.select_dtypes('number')
     else:
-        df_numeric_columns = tr_df[columns]
+        df_numeric_columns = df[columns]
     df_max = df_numeric_columns.max().max()
     df_min = df_numeric_columns.min().min()
     ranges = [
@@ -180,58 +187,79 @@ def discrete_background_color_bins(tr_df, n_bins=5, columns='all'):
 
 (styles, legend) = discrete_background_color_bins(tr_df)
 
-#print(styles)
+print(styles)
+print(legend)
 
 #%%
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-ncaab_app = dash.Dash('NCAAM BASKETBALL DASHBOARD') #, external_stylesheets=external_stylesheets
+ncaab_app = dash.Dash('NCAAM BASKETBALL DASHBOARD', external_stylesheets=external_stylesheets) #
 application = ncaab_app.server
-
-#app = Dash(__name__)
 
 # {current_time:%Y-%m-%d %H:%M}
 
-
 ncaab_app.layout = html.Div([html.H1('NCAAM BASKETBALL DASHBOARD',
-                                     style={'textAlign': 'Center', 'backgroundColor': 'rgb(223,187,133)',
-                                            'color': 'black', 'fontWeight': 'bold', 'border': '4px solid black'}),
+                                     style={'textAlign': 'Center', 'backgroundColor': 'rgb(223,187,133)', # #rgb(223,187,133) #3a7c89 #42B7B9
+                                            'color': 'black', 'fontWeight': 'bold', 'fontSize': '36px', #'#F1F1F1'
+                                            'border': '5px solid black', 'font-family': 'Arial'}), #Garamond
                              dcc.Tabs(id='ncaa-tabs',
                                       children=[
-                                          dcc.Tab(label='TEAM-VIZ', value='team-viz'),
-                                          dcc.Tab(label='STAT-VIZ', value='stat-viz'),
-                                          dcc.Tab(label='CAT-VIZ', value='cat-viz')]),
+                                          dcc.Tab(label='TEAM VIZ', value='TEAM VIZ',
+                                                  style={'textAlign': 'Center', 'backgroundColor': '#42B7B9',
+                                                         'color': 'black', 'fontWeight': 'bold', 'fontSize': '24px',
+                                                         'border': '3px solid black', 'font-family': 'Arial'},
+                                                  selected_style={'textAlign': 'Center', 'backgroundColor': '#42B7B9',
+                                                         'color': 'black', 'fontWeight': 'bold', 'fontSize': '24px',
+                                                         'border': '3px solid black', 'font-family': 'Arial'}),
+                                          dcc.Tab(label='STAT VIZ', value='STAT VIZ',
+                                                  style={'textAlign': 'Center', 'backgroundColor': '#F1F1F1', ##D691C1
+                                                         'color': 'black', 'fontWeight': 'bold', 'fontSize': '24px',
+                                                         'border': '3px solid black', 'font-family': 'Arial'},
+                                                  selected_style={'textAlign': 'Center', 'backgroundColor': '#F1F1F1',  ##D691C1
+                                                         'color': 'black', 'fontWeight': 'bold', 'fontSize': '24px',
+                                                         'border': '3px solid black', 'font-family': 'Arial'}),
+                                          dcc.Tab(label='CAT VIZ', value='CAT VIZ',
+                                                  style={'textAlign': 'Center', 'backgroundColor': '#C75DAB', #A7D3D4,,#E4C1D9,
+                                                         'color': 'black', 'fontWeight': 'bold', 'fontSize': '24px',
+                                                         'border': '3px solid black', 'font-family': 'Arial'},
+                                                  selected_style={'textAlign': 'Center', 'backgroundColor': '#C75DAB', #D691C1,#C75DAB
+                                                         'color': 'black', 'fontWeight': 'bold', 'fontSize': '24px',
+                                                         'border': '3px solid black', 'font-family': 'Arial'})]),
                              html.Div(id='dash-layout')])
 
 
-team_viz_layout = dash_table.DataTable(tr_df.to_dict('records'),
+team_viz_layout = html.Div([html.H1('TEAM DATABASE',
+                                    style={'textAlign': 'Center', 'backgroundColor': 'rgb(223,187,133)',
+                                           'color': 'black', 'fontWeight': 'bold', 'fontSize': '24px',
+                                           'border': '2px solid black', 'font-family': 'Arial'}), #padding: 20px;
+                            dash_table.DataTable(tr_df.to_dict('records'),
                                                     columns=[{"name": i, "id": i} for i in tr_df.columns],
                                                     id='tr-df',
                                                     style_data={'textAlign': 'Center', 'fontWeight': 'bold', 'border': '2px solid black'},
-                                                    style_cell={'textAlign': 'Center', 'fontWeight': 'bold', 'padding': '5px'},   #324f6e - TBD  #B10DC9 - fuschia #7FDBFF - Aqua
-                                                    style_header={'backgroundColor': '#7FDBFF', 'color': 'black', 'fontWeight': 'bold', 'border': '2px solid black'}, #'1px solid blue'
+                                                    style_cell={'textAlign': 'Center', 'fontWeight': 'bold', 'padding': '5px'},
+                                                                   # 'maxHeight': '400px', 'maxWidth': '60px'  324f6e - TBD  #B10DC9 - fuschia #7FDBFF - Aqua
+                                                    style_header={'backgroundColor': '#7FDBFF', 'color': 'black',
+                                                                  'fontWeight': 'bold', 'border': '2px solid black'},
                                                     sort_action='native',
                                                     style_data_conditional = [styles],
                                                  ),
+                            ])
 
 
-@ncaab_app.callback(Output(component_id='tr-df', component_property='value'))
-
-def display_dataframe(dataframe):
-    return dataframe
-
-
-stat_viz_layout = html.Div([html.H1('METRIC COMPARISON'),
-                  dcc.Graph(id='chart'),
-                  html.Br(),
-                  html.P('STAT A'),
-                  dcc.Dropdown(id='stata',
-                                            options=[{'label': 'WIN%', 'value': 'WIN%'},
-                                                     #{'label': 'AVG_MARGIN', 'value': 'AVG_MARGIN'},
-                                                     #{'label': 'OFF_EFF', 'value': 'OFF_EFF'},
-                                                     #{'label': 'DEF_EFF', 'value': 'DEF_EFF'},
-                                                     {'label': 'EFG%', 'value': 'EFG%'},
-                                                     {'label': 'TS%', 'value': 'TS%'},
+stat_viz_layout = html.Div([html.H1('STAT VIZ [TBU]',
+                                    style={'textAlign': 'Center', 'backgroundColor': 'rgb(223,187,133)',
+                                           'color': 'black', 'fontWeight': 'bold', 'fontSize': '24px',
+                                           'border': '4px solid black', 'font-family': 'Arial'}),
+                            dcc.Graph(id='charta'),
+                            html.Br(),
+                            html.P('STAT A'),
+                            dcc.Dropdown(id='stata',
+                                         options=[{'label': 'WIN%', 'value': 'WIN%'},
+                                                  #{'label': 'AVG_MARGIN', 'value': 'AVG_MARGIN'},
+                                                  # #{'label': 'OFF_EFF', 'value': 'OFF_EFF'},
+                                                  # #{'label': 'DEF_EFF', 'value': 'DEF_EFF'},
+                                                  {'label': 'EFG%', 'value': 'EFG%'},
+                                                  {'label': 'TS%', 'value': 'TS%'},
                                                      {'label': 'OPP_EFG%', 'value': 'OPP_EFG%'},
                                                      {'label': 'OPP_TS%', 'value': 'OPP_TS%'},
                                                      {'label': 'AST/TO', 'value': 'AST/TO'},
@@ -240,18 +268,16 @@ stat_viz_layout = html.Div([html.H1('METRIC COMPARISON'),
                                                      #{'label': 'STL+BLK/GM', 'value': 'STL+BLK/GM'},
                                                      #{'label': 'OPP_STL+BLK/GM', 'value': 'OPP_STL+BLK/GM'},
                                                     ], value='WIN%'), #, clearable=False
-                           ])
+                            ])
 
-@ncaab_app.callback(#Output(component_id='chart', component_property='figure'),
-                    [Input(component_id='stata', component_property='value'),])
-
-
-def display_chart(stata): #
-    fig = px.scatter(tr_df, x='WIN%', y=[stata])
-    return fig
-
-cat_viz_layout = html.Div([html.H1('STAT B'),
-                  dcc.Dropdown(id='statb',
+cat_viz_layout = html.Div([html.H1('CAT VIZ [TBU]',
+                                   style={'textAlign': 'Center', 'backgroundColor': 'rgb(223,187,133)',
+                                          'color': 'black', 'fontWeight': 'bold', 'fontSize': '24px',
+                                          'border': '4px solid black', 'font-family': 'Arial'}),
+                           dcc.Graph(id='chartb'),
+                           html.Br(),
+                           html.P('STAT B'),
+                           dcc.Dropdown(id='statb',
                                options=[{'label': 'WIN%', 'value': 'WIN%'},
                                         {'label': 'EFG%', 'value': 'EFG%'},
                                         {'label': 'TS%', 'value': 'TS%'},
@@ -268,46 +294,68 @@ cat_viz_layout = html.Div([html.H1('STAT B'),
                                                     ], value='WIN%'),
                            ])
 
-@ncaab_app.callback(#Output(component_id='chart', component_property='figure'),
-                    #[Input(component_id='stata', component_property='value'),
-                     [Input(component_id='statb', component_property='value')])
+# TAB CONFIGURATION CALLBACK
+@ncaab_app.callback(Output(component_id='dash-layout', component_property='children'),
+                    [Input(component_id='ncaa-tabs', component_property='value')])
 
+def update_layout(tab):
+    if tab == 'TEAM VIZ':
+        return team_viz_layout
+    elif tab == 'STAT VIZ':
+        return stat_viz_layout
+    elif tab == 'CAT VIZ':
+        return cat_viz_layout
+
+# TEAM VIZ CALLBACK
+@ncaab_app.callback(Output(component_id='tr-df', component_property='figure'),
+                    [Input(component_id='stata', component_property='value'),
+                     Input(component_id='statb', component_property='value')])
+
+def display_dataframe(df):
+    return df
+
+# STAT VIZ CALLBACK
+@ncaab_app.callback(Output(component_id='charta', component_property='figure'),
+                    [Input(component_id='stata', component_property='value'),])
+
+def display_chart(stata): #
+    fig = px.scatter(tr_df, x='WIN%', y=[stata])
+    return fig
+
+# CAT VIZ CALLBACK
+@ncaab_app.callback(Output(component_id='chartb', component_property='figure'),
+                     [Input(component_id='statb', component_property='value')])
 
 def display_chart(statb): #
     fig = px.scatter(tr_df, x='WIN%', y=[statb])
     return fig
 
-#html.Div(id='dashboard-layout')])
+if __name__ == '__main__':
+    application.run(host='0.0.0.0', port=8035)
 
-@ncaab_app.callback(Output(component_id='tab-layout', component_property='children'),
+
+#%%
+
+#histogram = px.histogram(test, x='Probability', color=TARGET,
+#                         marginal="box", nbins=30, opacity=0.6,
+#                         color_discrete_sequence=['#FFBD59',
+#                                                  '#3BA27A'])
+
+
+#%%
+
+#@ncaab_app.callback(Output(component_id='tab-layout', component_property='children'),
                       #Output(component_id='tr-df', component_property='figure'),
                       #Output(component_id='chart', component_property='figure'),
                       #][Input(component_id='stata', component_property='value'),
-                       #Input(component_id='statb', component_property='value')]
- )
-
-def display_dataframe(dataframe):
-    return dataframe
-
-@ncaab_app.callback(Output(component_id='dash-layout', component_property='children'),
-                 [Input(component_id='ncaa-tabs', component_property='value')])
-
-def update_layout(tab):
-    if tab == 'team-viz':
-        return team_viz_layout
-    elif tab == 'stat-viz':
-        return stat_viz_layout
-    elif tab == 'cat-viz':
-        return cat_viz_layout
-
-if __name__ == '__main__':
-    application.run(host='0.0.0.0', port=8050)
-
+                       #Input(component_id='statb', component_property='value')])
 
 #Output(component_id='tr-df', component_property='figure'),
                       #Output(component_id='chart', component_property='figure'),
                       #[Input(component_id='stata', component_property='value'),
                        #Input(component_id='statb', component_property='value')]
+
+
 
 
 #%%
@@ -561,5 +609,19 @@ tr_df['SEED'] = tr_df['Team'].map(tourney_teams_dict)
 print(tr_df['SEED'].isnull().sum())
 
 
+
+#%%
+
+table = go.Figure(data=[go.Table(
+    header=dict(values=columns, fill_color='#FFBD59',
+                line_color='white', align='center',
+                font=dict(color='white', size=13)),
+    cells=dict(values=[test[c] for c in columns],
+               format=["d", "", "", "", "", ".2%"],
+               fill_color=[['white', '#FFF2CC']*(len(test)-1)],
+               align='center'))
+])
+table.update_layout(title_text=f'Sample records (n={len(test)})',
+                    font_family='Tahoma')
 
 #%%
