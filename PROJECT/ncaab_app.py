@@ -11,59 +11,66 @@ from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
 from dash.exceptions import PreventUpdate
+import dash_bootstrap_components as dbc
 
 import plotly as ply
 import plotly.express as px
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
+
+import scipy.stats as st
+import statistics
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from statsmodels.graphics.gofplots import qqplot
+
+import sys
+import os
+import datetime
+import time
 
 import requests
 from bs4 import BeautifulSoup
 import re
 
-import datetime
-import sys
-import os
-
-from scipy import stats as stats
-import statistics
-
-import json
-import time
-import nltk
+#import json
+#import nltk
 
 print("\nIMPORT SUCCESS")
 
 #%%
 # CLEAN DATA IMPORT
+rollup_filepath = '/Users/nehat312/GitHub/Complex-Data-Visualization-/project/data/ncaab_data_rollup_5-2-22'
 tr_filepath = '/Users/nehat312/GitHub/Complex-Data-Visualization-/project/data/tr_data_hub_4-05-22'
 kp_filepath = '/Users/nehat312/GitHub/Complex-Data-Visualization-/project/data/kenpom_pull_3-14-22'
 
+# NOTE: PANDAS OPENPYXL PACKAGE / EXTENSION REQUIRED TO IMPORT .xlsx FILES
+# DATA ROLLUP
+rollup = pd.read_excel(rollup_filepath + '.xlsx', sheet_name='ROLLUP') #index_col='Team'
+
 # TEAMRANKINGS DATA
-tr_df = pd.read_excel(tr_filepath + '.xlsx') #index_col='Team'
-#tr_df = pd.read_csv(mtr_filepath + '.csv')
+tr = pd.read_excel(tr_filepath + '.xlsx') #index_col='Team'
 
 # KENPOM DATA
-kp_df = pd.read_excel(kp_filepath + '.xlsx') #index_col='Team'
-#kp_df = pd.read_csv(kp_filepath + '.csv')
+kp = pd.read_excel(kp_filepath + '.xlsx') #index_col='Team'
 
 print("\nIMPORT SUCCESS")
 
 #%%
 # FINAL PRE-PROCESSING
-tr_df['opponent-stocks-per-game'] = tr_df['opponent-blocks-per-game'] + tr_df['opponent-steals-per-game']
-tr_df = tr_df.round(2)
+tr['opponent-stocks-per-game'] = tr['opponent-blocks-per-game'] + tr['opponent-steals-per-game']
+rollup['opponent-stocks-per-game'] = rollup['opponent-blocks-per-game'] + rollup['opponent-steals-per-game']
 
-print(tr_df.head())
+tr = tr.round(2)
+rollup = rollup.round(2)
 
-#%%
-
-print(tr_df.info())
-
-#print(kp_df.info())
-#print(tr_df.index)
-#print(tr_df)
+print(tr.head())
+#print(tr.info())
+#print(tr.index)
+#print(tr)
 
 #%%
-tr_df = tr_df[['Team', 'win-pct-all-games',
+tr_df = tr[['Team', 'win-pct-all-games',
                'average-scoring-margin', #'opponent-average-scoring-margin',
                'points-per-game', 'opponent-points-per-game',
                'offensive-efficiency', 'defensive-efficiency', 'net-adj-efficiency',
@@ -80,7 +87,30 @@ tr_df = tr_df[['Team', 'win-pct-all-games',
                ]]
 
 
-print(tr_df.info())
+rollup_df = rollup[['TR_Team', 'win-pct-all-games',
+                    'average-scoring-margin', #'opponent-average-scoring-margin',
+                    'points-per-game', 'opponent-points-per-game',
+                    'offensive-efficiency', 'defensive-efficiency', 'net-adj-efficiency',
+                    'effective-field-goal-pct', 'opponent-effective-field-goal-pct',
+                    #'true-shooting-percentage',  #'opponent-true-shooting-percentage',
+                    'three-point-pct', 'two-point-pct', 'free-throw-pct',
+                    'opponent-three-point-pct', 'opponent-two-point-pct', 'opponent-free-throw-pct',
+                    'assists-per-game', 'opponent-assists-per-game',
+                    #'turnovers-per-game', 'opponent-turnovers-per-game',
+                    'assist--per--turnover-ratio', 'opponent-assist--per--turnover-ratio',
+                    'stocks-per-game', 'opponent-stocks-per-game',
+                    'alias', 'turner_name', 'conf_alias', # 'name', 'school_ncaa',
+                    'venue_city', 'venue_state', 'venue_name', 'venue_capacity', #'venue_id', 'GBQ_id',
+                    #'logo_large', 'logo_medium', 'logo_small',
+                    'mascot', 'mascot_name', 'mascot_common_name', 'tax_species', 'tax_genus', 'tax_family',
+                    'tax_order', 'tax_class', 'tax_phylum', 'tax_kingdom', 'tax_domain',
+                    'Conference', 'Rank', 'Seed', 'Win', 'Loss',
+                    'Adj EM', 'AdjO', 'AdjD', 'AdjT', 'Luck',
+                    'SOS Adj EM', 'SOS OppO', 'SOS OppD', 'NCSOS Adj EM'
+                    ]]
+
+#%%
+print(rollup_df)
 
 #%%
 # RENAME COLUMNS TO IMPROVE APP OPTICS
@@ -125,6 +155,7 @@ tr_cols = {'Team': 'TEAM', 'points-per-game':'PTS/GM', 'average-scoring-margin':
             'net-total-rebounds-per-game':'NET_TREB/GM', 'net-off-rebound-pct':'NET_OREB%', 'net-def-rebound-pct':'NET_DREB%'
             }
 
+print(tr_df.info())
 
 #%%
 tr_df.columns = tr_df.columns.map(app_cols)
@@ -133,12 +164,62 @@ print(tr_df.columns)
 print(tr_df.info())
 
 #%%
+# DATA ROLLUP - PRE-PROCESSING
+print(rollup.info())
 
-def discrete_background_color_bins(df, n_bins=5, columns='PTS/GM'):
+#%%
+# ROLLUP COLUMNS (FILTERED)
+print(rollup_df.columns)
+print('*'*100)
+
+# GBQ / KP COLS
+#print(f'BIG QUERY / KENPOM DATA:')
+#print(rollup_df.columns[63:]) #print(rollup.columns[-40:])
+
+#%%
+# PRE-PROCESSING ROLLUP FILE
+roll_cols = {'TR_Team': 'TEAM', 'win-pct-all-games':'WIN%',
+            'average-scoring-margin':'AVG_MARGIN', #'opponent-average-scoring-margin':'OPP_AVG_MARGIN',
+            'points-per-game': 'PTS/GM',  'opponent-points-per-game':'OPP_PTS/GM',
+            'offensive-efficiency':'O_EFF', 'defensive-efficiency':'D_EFF', 'net-adj-efficiency':'NET_EFF',
+            'effective-field-goal-pct':'EFG%', #'true-shooting-percentage':'TS%',
+            'opponent-effective-field-goal-pct':'OPP_EFG%', #'opponent-true-shooting-percentage':'OPP_TS%',
+            'three-point-pct':'3P%', 'two-point-pct':'2P%', 'free-throw-pct':'FT%',
+            'opponent-three-point-pct':'OPP_3P%', 'opponent-two-point-pct':'OPP_2P%', 'opponent-free-throw-pct':'OPP_FT%',
+            'assists-per-game':'AST/GM', 'opponent-assists-per-game':'OPP_AST/GM',
+            'assist--per--turnover-ratio':'AST/TO', 'opponent-assist--per--turnover-ratio':'OPP_AST/TO',
+            'stocks-per-game':'S+B/GM', 'opponent-stocks-per-game':'OPP_S+B/GM',
+            #'turnovers-per-game':'TO/GM', 'opponent-turnovers-per-game':'OPP_TO/GM',
+            #'opponent-blocks-per-game':'OPP_BLK/GM', 'opponent-steals-per-game':'OPP_STL/GM', 'blocks-per-game':'B/GM', 'steals-per-game':'S/GM',
+            'alias':'ABBR', 'name':'NICKNAME', 'turner_name':'INSTITUTION', 'conf_alias':'CONF',
+            'venue_city':'CITY', 'venue_state':'STATE', 'venue_name':'ARENA', 'venue_capacity':'ARENA_CAP',
+            #'logo_large', 'logo_medium', 'logo_small',
+            'mascot':'MASCOT', 'mascot_name':'MASCOT_NAME', 'mascot_common_name':'MASCOT_LABEL',
+            'tax_species':'SPECIES', 'tax_genus':'GENUS', 'tax_family':'FAMILY',
+            'tax_order':'ORDER', 'tax_class':'CLASS', 'tax_phylum':'PHYLUM', 'tax_kingdom':'KINGDOM', 'tax_domain':'DOMAIN',
+            'Conference':'KP_CONF', 'Rank':'KP_RANK', 'Seed':'SEED', 'Win':'WIN', 'Loss':'LOSS', 'Adj EM':'ADJ_EM',
+            'AdjO':'ADJ_O', 'AdjD':'ADJ_D', 'AdjT':'ADJ_T', 'Luck':'LUCK',
+            'SOS Adj EM':'SOS_ADJ_EM', 'SOS OppO':'SOS_OPP_O', 'SOS OppD':'SOS_OPP_D', 'NCSOS Adj EM':'NCSOS_ADJ_EM'
+            }
+
+#%%
+# MAP COLUMN LABELING TO DATAFRAME
+rollup_df.columns = rollup_df.columns.map(roll_cols)
+
+print(rollup_df.columns)
+print(rollup_df.info())
+
+
+#%% [markdown]
+# * Dash App Architecture
+
+#%%
+
+def discrete_background_color_bins(df, n_bins=5, columns='all'):
     import colorlover
     bounds = [i * (1.0 / n_bins) for i in range(n_bins + 1)]
     if columns == 'all':
-        if 'id' in tr_df:
+        if 'id' in df:
             df_numeric_columns = df.select_dtypes('number').drop(['id'], axis=1)
         else:
             df_numeric_columns = df.select_dtypes('number')
@@ -260,13 +341,12 @@ stat_viz_layout = html.Div([html.H1('STAT VIZ [TBU]',
                                                   # #{'label': 'DEF_EFF', 'value': 'DEF_EFF'},
                                                   {'label': 'EFG%', 'value': 'EFG%'},
                                                   {'label': 'TS%', 'value': 'TS%'},
-                                                     {'label': 'OPP_EFG%', 'value': 'OPP_EFG%'},
-                                                     {'label': 'OPP_TS%', 'value': 'OPP_TS%'},
-                                                     {'label': 'AST/TO', 'value': 'AST/TO'},
-                                                     {'label': 'OPP_AST/TO', 'value': 'OPP_AST/TO'},
-                                                     #{'label': 'TREB%', 'value': 'TREB%'},
-                                                     #{'label': 'STL+BLK/GM', 'value': 'STL+BLK/GM'},
-                                                     #{'label': 'OPP_STL+BLK/GM', 'value': 'OPP_STL+BLK/GM'},
+                                                  {'label': 'OPP_EFG%', 'value': 'OPP_EFG%'},
+                                                  {'label': 'OPP_TS%', 'value': 'OPP_TS%'},
+                                                  {'label': 'AST/TO', 'value': 'AST/TO'},
+                                                  {'label': 'OPP_AST/TO', 'value': 'OPP_AST/TO'},
+                                                  #{'label': 'STL+BLK/GM', 'value': 'STL+BLK/GM'},
+                                                  # #{'label': 'OPP_STL+BLK/GM', 'value': 'OPP_STL+BLK/GM'},
                                                     ], value='WIN%'), #, clearable=False
                             ])
 
@@ -278,20 +358,12 @@ cat_viz_layout = html.Div([html.H1('CAT VIZ [TBU]',
                            html.Br(),
                            html.P('STAT B'),
                            dcc.Dropdown(id='statb',
-                               options=[{'label': 'WIN%', 'value': 'WIN%'},
-                                        {'label': 'EFG%', 'value': 'EFG%'},
-                                        {'label': 'TS%', 'value': 'TS%'},
-                                                     {'label': 'OPP_EFG%', 'value': 'OPP_EFG%'},
-                                                     {'label': 'OPP_TS%', 'value': 'OPP_TS%'},
-                                                     {'label': 'AST/TO', 'value': 'AST/TO'},
-                                                     {'label': 'OPP_AST/TO', 'value': 'OPP_AST/TO'},
-                                        #{'label': 'AVG_MARGIN', 'value': 'AVG_MARGIN'},
-                                                     #{'label': 'OFF_EFF', 'value': 'OFF_EFF'},
-                                                     #{'label': 'DEF_EFF', 'value': 'DEF_EFF'},
-                                                     #{'label': 'TREB%', 'value': 'TREB%'},
-                                                     #{'label': 'STL+BLK/GM', 'value': 'STL+BLK/GM'},
-                                                     #{'label': 'OPP_STL+BLK/GM', 'value': 'OPP_STL+BLK/GM'},
-                                                    ], value='WIN%'),
+                               options=[{'label': 'MASCOT', 'value': 'MASCOT'},
+                                        {'label': 'MASCOT CATEGORY', 'value': 'MASCOT_LABEL'},
+                                        {'label': 'MASCOT SPECIES', 'value': 'SPECIES'},
+                                        {'label': 'MASCOT ORDER', 'value': 'ORDER'},
+                                        #{'label': 'MASCOT CLASS', 'value': 'CLASS'},
+                                        ], value='MASCOT_LABEL'),
                            ])
 
 # TAB CONFIGURATION CALLBACK
@@ -327,39 +399,53 @@ def display_chart(stata): #
                      [Input(component_id='statb', component_property='value')])
 
 def display_chart(statb): #
-    fig = px.scatter(tr_df, x='WIN%', y=[statb])
+    fig = px.histogram(data_frame=rollup_df, x=rollup_df[statb], title=f'{statb} HISTOGRAM',
+                       marginal="box", nbins=30, opacity=0.75,
+                       color_discrete_sequence=['#009B9E', '#C75DAB'],  #'#FFBD59', '#3BA27A'
+
+                       ) # hover data - school venue? team performance?
+    #fig.update_layout(yaxis={'categoryorder': 'total ascending'})
     return fig
+
+#xaxis={'categoryorder': 'total descending'})  #category_orders= 'total descending',
+#.value_counts().sort_values(ascending=False)
 
 if __name__ == '__main__':
     application.run(host='0.0.0.0', port=8035)
 
 
 #%%
+# GRAPH SCRATCH
+
+
 
 #histogram = px.histogram(test, x='Probability', color=TARGET,
-#                         marginal="box", nbins=30, opacity=0.6,
+#                         marginal="box", nbins=30, opacity=0.6, range_x = [-5, 5]
 #                         color_discrete_sequence=['#FFBD59',
 #                                                  '#3BA27A'])
 
-
 #%%
-
-#@ncaab_app.callback(Output(component_id='tab-layout', component_property='children'),
-                      #Output(component_id='tr-df', component_property='figure'),
-                      #Output(component_id='chart', component_property='figure'),
-                      #][Input(component_id='stata', component_property='value'),
-                       #Input(component_id='statb', component_property='value')])
-
-#Output(component_id='tr-df', component_property='figure'),
-                      #Output(component_id='chart', component_property='figure'),
-                      #[Input(component_id='stata', component_property='value'),
-                       #Input(component_id='statb', component_property='value')]
-
-
 
 
 #%%
+fig = make_subplots(rows=1, cols=2)
+fig.add_trace(go.Scatter(x=rollup_df[statb], y=rollup_df['WIN%'],
+                         title=f'{statb} HISTOGRAM', row=1, col=1))
 
+fig.add_trace(go.Scatter(x=[20, 30, 40], y=[50, 60, 70]), row=1, col=2)
+
+fig.update_layout(height=600, width=800, title_text="Side By Side Subplots")
+fig.show()
+
+
+
+
+
+#%%
+print(rollup_df['WIN%'].value_counts().sort_values(ascending=False))
+
+#%%
+# PLOTLY FILTER QUERIES
 #{'if': {'row_index': [2,3,6,7,10,11]}, 'backgroundColor': 'rgb(211, 211, 211)'},
 #{'if': {'filter_query': '{FINAL} > 105', 'column_id': 'FINAL', 'row_index': [0,1]},
 #'color': '#2ECC40', 'fontWeight': 'bold'}, #'backgroundColor': 'red':'#2ECC40', gray?: '#FF4136'
@@ -368,6 +454,177 @@ if __name__ == '__main__':
 #'color': 'black', 'backgroundColor': '#FF4136', 'fontWeight': 'bold'}, # RED '#FF4136' / GREEN '#2ECC40'
 # {'if': {'column_id': 'MODEL_PREDICTION'}, 'fontWeight': 'bold',},], #'#01FF70'  'backgroundColor': '#01FF70',
 
+#%% [markdown]
+# * NORMALITY TESTS
+# *
+
+#%%
+print(rollup_df.columns)
+print(rollup_df.info())
+
+
+#%%
+rollup_df.index = rollup_df['TEAM']
+rollup_df.drop(columns='TEAM', inplace=True)
+
+#%%
+float_rollup = rollup_df[['WIN%', 'AVG_MARGIN', 'PTS/GM', 'OPP_PTS/GM', 'O_EFF', 'D_EFF',
+                          'NET_EFF', 'EFG%', 'OPP_EFG%', '3P%', '2P%', 'FT%',
+                          'OPP_3P%', 'OPP_2P%', 'OPP_FT%', 'AST/GM', 'OPP_AST/GM', 'AST/TO', 'OPP_AST/TO',
+                          'S+B/GM', 'OPP_S+B/GM',
+                          'ARENA_CAP', 'KP_RANK', 'SEED', 'WIN', 'LOSS',
+                          'ADJ_EM', 'ADJ_O', 'ADJ_D', 'ADJ_T', 'LUCK',
+                          'SOS_ADJ_EM', 'SOS_OPP_O', 'SOS_OPP_D', 'NCSOS_ADJ_EM']]
+
+print(float_rollup.info())
+
+#%%
+#test = st.kstest(float_rollup['EFG%'], 'norm')
+da_testtv = st.normaltest(float_rollup['EFG%'])
+
+print(da_testtv)
+
+#%%
+## NORMALITY TESTS
+normality_df = pd.DataFrame()
+for col in float_rollup.columns:
+    normality_df[col] = st.kstest(float_rollup[col], 'norm')
+    #kstest_t = st.kstest(df['temp'], 'norm')
+    #da_testtv = st.normaltest(df['traffic_volume'])
+    #da_testt = st.normaltest(df['temp'])
+    #shapiro_testtv = st.shapiro(df['traffic_volume'])
+    #shapiro_testt = st.shapiro(df['temp'])
+
+print(normality_df)
+#%%
+## NORMALITY TESTS
+kstest_tv = st.kstest(df['traffic_volume'],'norm')
+kstest_t = st.kstest(df['temp'],'norm')
+da_testtv = st.normaltest(df['traffic_volume'])
+da_testt = st.normaltest(df['temp'])
+shapiro_testtv = st.shapiro(df['traffic_volume'])
+shapiro_testt = st.shapiro(df['temp'])
+
+
+#%%
+rollup_df.dropna(inplace=True)
+print(rollup_df.info())
+
+#%%
+# NUMERICS
+numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
+numeric_cols = rollup_df.select_dtypes(include=numerics)
+#numeric_cols.dropna(inplace=True)
+
+X = rollup_df[rollup_df._get_numeric_data().columns.to_list()[:-1]]
+Y = rollup_df['WIN%']
+#X.drop(columns='price', inplace=True, axis=1)
+
+#%%
+print(X.info())
+
+#%%
+X = StandardScaler().fit_transform(X)
+
+#%%
+
+pca = PCA(n_components=10, svd_solver='full') # 'mle'
+
+pca.fit(X)
+X_PCA = pca.transform(X)
+print('ORIGINAL DIMENSIONS:', X.shape)
+print('TRANSFORMED DIMENSIONS:', X_PCA.shape)
+print(f'EXPLAINED VARIANCE RATIO: {pca.explained_variance_ratio_}')
+
+
+#%%
+x = np.arange(1, len(np.cumsum(pca.explained_variance_ratio_))+1, 1)
+
+plt.figure(figsize=(12,8))
+plt.plot(x, np.cumsum(pca.explained_variance_ratio_))
+plt.xticks(x)
+#plt.grid()
+plt.show()
+
+#%% [markdown]
+
+# 10 features explain ~89.6% of variance
+
+
+#%%
+# SINGULAR VALUE DECOMPOSITION ANALYSIS [SVD]
+# CONDITION NUMBER
+
+# ORIGINAL DATA
+
+from numpy import linalg as LA
+
+H = np.matmul(X.T, X)
+_, d, _ = np.linalg.svd(H)
+print(f'ORIGINAL DATA: SINGULAR VALUES {d}')
+print(f'ORIGINAL DATA: CONDITIONAL NUMBER {LA.cond(X)}')
+
+
+#%%
+# TRANSFORMED DATA
+H_PCA = np.matmul(X_PCA.T, X_PCA)
+_, d_PCA, _ = np.linalg.svd(H_PCA)
+print(f'TRANSFORMED DATA: SINGULAR VALUES {d_PCA}')
+print(f'TRANSFORMED DATA: CONDITIONAL NUMBER {LA.cond(X_PCA)}')
+print('*'*58)
+
+#%%
+# CONSTRUCTION OF REDUCED DIMENSION DATASET
+
+#pca_df = pca.explained_variance_ratio_
+
+a, b = X_PCA.shape
+column = []
+df_pca = pd.DataFrame(X_PCA).corr()
+
+for i in range(b):
+    column.append(f'PRINCIPLE COLUMN {i+1}')
+sns.heatmap(df_pca, annot=True, xticklabels=column, yticklabels=column)
+df_PCA = pd.DataFrame(data=X_PCA)
+plt.title("correlation coefficient")
+plt.show()
+
+df_PCA = pd.concat([df_PCA, Y], axis=1)
+df_PCA.columns = pd.DataFrame(data=df, columns=col)
+
+df_PCA.info()
+
+#print("old one:",df1.head().to_string)
+#print("new one:",df_PCA.head().to_string)
+
+#%% [markdown]
+
+# SINGULAR VALUE DECOMPOSITION [SVD]
+# * Used in tandem with Principal Component Analysis
+#     * Dimensionality Reduction - reducing number of input variables / features
+# * Create projection of sparse dataset prior to fitting a model
+#     * Always outputs a square matrix H (transposed X)
+#     * Singular values close to zero to be removed
+# * Singular Value Decomposition
+#     * Higher = GOOD
+# * Conditional Number
+#    * Higher = BAD
+# * Eigensystem Analysis
+#     * Eigenvalues
+#    * Eigenvectors
+#     * Condition Number - max value / min number
+#         * LA.cond(X)
+#         * <100 = weak multicollinearity
+#         * 100<k<1000 = moderate multicollinearity
+#         * >1000 = severe multicollinearity
+
+
+
+#%%
+
+qqplot(df['traffic_volume'])
+plt.title("QQ-plot of traffic volume ")
+plt.show()
 #%%
 
 # SCATTERPLOT -
