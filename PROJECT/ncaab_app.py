@@ -15,6 +15,7 @@ import dash_bootstrap_components as dbc
 
 import plotly as ply
 import plotly.express as px
+
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
@@ -39,14 +40,27 @@ import re
 print("\nIMPORT SUCCESS")
 
 #%%
+# Absolute path of current folder
+#abspath_curr = '/content/drive/My Drive/SPORTS/NCAAB/'
+
+# Absolute path of shallow utilities folder
+#abspath_util_shallow = '/content/drive/My Drive/Colab Notebooks/teaching/gwu/machine_learning_I/spring_2022/code/utilities/p2_shallow_learning/'
+
+#%%
 # CLEAN DATA IMPORT
 rollup_filepath = '/Users/nehat312/GitHub/Complex-Data-Visualization-/project/data/ncaab_data_rollup_5-2-22'
+historical_filepath = '/Users/nehat312/GitHub/Complex-Data-Visualization-/project/data/MNCAAB-historical'
 tr_filepath = '/Users/nehat312/GitHub/Complex-Data-Visualization-/project/data/tr_data_hub_4-05-22'
 kp_filepath = '/Users/nehat312/GitHub/Complex-Data-Visualization-/project/data/kenpom_pull_3-14-22'
 
 # NOTE: PANDAS OPENPYXL PACKAGE / EXTENSION REQUIRED TO IMPORT .xlsx FILES
-# DATA ROLLUP
+
+# ROLLED-UP DATA
 rollup = pd.read_excel(rollup_filepath + '.xlsx', sheet_name='ROLLUP') #index_col='Team'
+
+# HISTORICAL GAME DATA
+regular = pd.read_excel(historical_filepath + '.xlsx', sheet_name='REGULAR') #index_col='Team'
+tourney = pd.read_excel(historical_filepath + '.xlsx', sheet_name='TOURNEY') #index_col='Team'
 
 # TEAMRANKINGS DATA
 tr = pd.read_excel(tr_filepath + '.xlsx') #index_col='Team'
@@ -69,7 +83,23 @@ print(tr.head())
 #print(tr.index)
 #print(tr)
 
+
 #%%
+print(regular.columns)
+print('*'*100)
+print(tourney.columns)
+
+#%% [markdown]
+# * Columns are identical across both historical game data sets (Regular Season / Tournament)
+
+#%%
+print(regular.info())
+print('*'*50)
+print(tourney.info())
+
+#%%
+# REFINED DATAFRAMES - keeping only unique, essential, or most valuable columns from each data set.
+
 tr_df = tr[['Team', 'win-pct-all-games',
                'average-scoring-margin', #'opponent-average-scoring-margin',
                'points-per-game', 'opponent-points-per-game',
@@ -109,8 +139,6 @@ rollup_df = rollup[['TR_Team', 'win-pct-all-games',
                     'SOS Adj EM', 'SOS OppO', 'SOS OppD', 'NCSOS Adj EM'
                     ]]
 
-#%%
-print(rollup_df)
 
 #%%
 # RENAME COLUMNS TO IMPROVE APP OPTICS
@@ -175,6 +203,11 @@ print('*'*100)
 # GBQ / KP COLS
 #print(f'BIG QUERY / KENPOM DATA:')
 #print(rollup_df.columns[63:]) #print(rollup.columns[-40:])
+
+#%%
+# DROP NULL VALUES
+rollup_df.dropna(inplace=True)
+print(rollup_df.info())
 
 #%%
 # PRE-PROCESSING ROLLUP FILE
@@ -271,6 +304,7 @@ def discrete_background_color_bins(df, n_bins=5, columns='all'):
 print(styles)
 print(legend)
 
+
 #%%
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -335,20 +369,66 @@ stat_viz_layout = html.Div([html.H1('STAT VIZ [TBU]',
                             html.Br(),
                             html.P('STAT A'),
                             dcc.Dropdown(id='stata',
-                                         options=[{'label': 'WIN%', 'value': 'WIN%'},
+                                         options=[#{'label': 'WIN%', 'value': 'WIN%'},
                                                   #{'label': 'AVG_MARGIN', 'value': 'AVG_MARGIN'},
-                                                  # #{'label': 'OFF_EFF', 'value': 'OFF_EFF'},
-                                                  # #{'label': 'DEF_EFF', 'value': 'DEF_EFF'},
+                                                  {'label': 'OFFENSIVE EFFICIENCY', 'value': 'OFF_EFF'},
+                                                  {'label': 'DEFENSIVE EFFICIENCY', 'value': 'DEF_EFF'},
                                                   {'label': 'EFG%', 'value': 'EFG%'},
-                                                  {'label': 'TS%', 'value': 'TS%'},
-                                                  {'label': 'OPP_EFG%', 'value': 'OPP_EFG%'},
-                                                  {'label': 'OPP_TS%', 'value': 'OPP_TS%'},
+                                                  {'label': 'OPP EFG%', 'value': 'OPP_EFG%'},
+                                                  #{'label': 'TS%', 'value': 'TS%'}, {'label': 'OPP TS%', 'value': 'OPP_TS%'},
                                                   {'label': 'AST/TO', 'value': 'AST/TO'},
-                                                  {'label': 'OPP_AST/TO', 'value': 'OPP_AST/TO'},
+                                                  {'label': 'OPP AST/TO', 'value': 'OPP_AST/TO'},
                                                   #{'label': 'STL+BLK/GM', 'value': 'STL+BLK/GM'},
                                                   # #{'label': 'OPP_STL+BLK/GM', 'value': 'OPP_STL+BLK/GM'},
-                                                    ], value='WIN%'), #, clearable=False
+                                                    ], value='OFF_EFF'), #, clearable=False
                             ])
+
+efg_win = px.scatter(rollup_df, x=rollup_df['EFG%'], y=rollup_df['WIN%'], hover_data=['TEAM'], color=rollup_df['CONF'], color_continuous_scale='Tropic') # barmode='group',  #, barmode='group' color=rollup_df['CONF']
+margin_win = px.scatter(rollup_df, x=rollup_df['AVG_MARGIN'], y=rollup_df['WIN%'], hover_data=['TEAM'], color=rollup_df['CONF'], color_continuous_scale='Tropic')
+o_eff_win = px.scatter(rollup_df, x=rollup_df['O_EFF'], y=rollup_df['WIN%'], hover_data=['TEAM'], color=rollup_df['CONF'], color_continuous_scale='Tropic')
+d_eff_win = px.scatter(rollup_df, x=rollup_df['D_EFF'], y=rollup_df['WIN%'], hover_data=['TEAM'], color=rollup_df['CONF'], color_continuous_scale='Tropic') #plasma, thermal, spectral
+
+subplot_1x1 = html.Div([html.H1('EFG% vs. WIN%',
+                                style={'textAlign': 'Center', 'backgroundColor': 'rgb(223,187,133)',
+                                       'color': 'black', 'fontWeight': 'bold', 'fontSize': '24px',
+                                       'border': '2px solid black', 'font-family': 'Arial'},
+                                ),
+                        # html.P('Dash: A web application framework for Python.'),
+                        dcc.Graph(id='subplot-1-1x1', figure=efg_win),
+                        ])
+
+subplot_1x2 = html.Div([html.H1('AVG. MARGIN vs. WIN%',
+                                style={'textAlign': 'Center', 'backgroundColor': 'rgb(223,187,133)',
+                                       'color': 'black', 'fontWeight': 'bold', 'fontSize': '24px',
+                                       'border': '2px solid black', 'font-family': 'Arial'},
+                                ),
+                        # html.P('Dash: A web application framework for Python.'),
+                        dcc.Graph(id='subplot-1-1x2', figure=margin_win),
+                        ])
+
+subplot_2x1 = html.Div([html.H1('OFFENSIVE EFFICIENCY vs. WIN%',
+                                style={'textAlign': 'Center', 'backgroundColor': 'rgb(223,187,133)',
+                                       'color': 'black', 'fontWeight': 'bold', 'fontSize': '24px',
+                                       'border': '2px solid black', 'font-family': 'Arial'},
+                                ),
+                        # html.P('Dash: A web application framework for Python.'),
+                        dcc.Graph(id='subplot-1-2x1', figure=o_eff_win),
+                        ])
+
+subplot_2x2 = html.Div([html.H1('DEFENSIVE EFFICIENCY vs. WIN%',
+                                style={'textAlign': 'Center', 'backgroundColor': 'rgb(223,187,133)',
+                                       'color': 'black', 'fontWeight': 'bold', 'fontSize': '24px',
+                                       'border': '2px solid black', 'font-family': 'Arial'},
+                                ),
+                        # html.P('Dash: A web application framework for Python.'),
+                        dcc.Graph(id='subplot-1-2x2', figure=d_eff_win),
+                        ])
+
+
+stat_viz_layout_sp = html.Div([html.Div(subplot_1x1,style={'width':'49%','display':'inline-block'}),
+                      html.Div(subplot_1x2,style={'width':'49%','display':'inline-block'}),
+                      html.Div(subplot_2x1,style={'width':'49%','display':'inline-block'}),
+                      html.Div(subplot_2x2,style={'width':'49%','display':'inline-block'})])
 
 cat_viz_layout = html.Div([html.H1('CAT VIZ [TBU]',
                                    style={'textAlign': 'Center', 'backgroundColor': 'rgb(223,187,133)',
@@ -374,25 +454,24 @@ def update_layout(tab):
     if tab == 'TEAM VIZ':
         return team_viz_layout
     elif tab == 'STAT VIZ':
-        return stat_viz_layout
+        return stat_viz_layout_sp
     elif tab == 'CAT VIZ':
         return cat_viz_layout
 
 # TEAM VIZ CALLBACK
 @ncaab_app.callback(Output(component_id='tr-df', component_property='figure'),
-                    [Input(component_id='stata', component_property='value'),
-                     Input(component_id='statb', component_property='value')])
+                    [Input(component_id='statb', component_property='value'),])
+                     #Input(component_id='stata', component_property='value')
 
 def display_dataframe(df):
     return df
 
 # STAT VIZ CALLBACK
-@ncaab_app.callback(Output(component_id='charta', component_property='figure'),
-                    [Input(component_id='stata', component_property='value'),])
+#@ncaab_app.callback(Output(component_id='charta', component_property='figure'),
+#                    [Input(component_id='stata', component_property='value'),])
 
-def display_chart(stata): #
-    fig = px.scatter(tr_df, x='WIN%', y=[stata])
-    return fig
+#def display_chart(stata, statb, statc, statd): #
+    #fig = px.scatter(tr_df, x='WIN%', y=[stata])
 
 # CAT VIZ CALLBACK
 @ncaab_app.callback(Output(component_id='chartb', component_property='figure'),
@@ -405,10 +484,9 @@ def display_chart(statb): #
 
                        ) # hover data - school venue? team performance?
     #fig.update_layout(yaxis={'categoryorder': 'total ascending'})
+    # xaxis={'categoryorder': 'total descending'})  #category_orders= 'total descending',
+    # .value_counts().sort_values(ascending=False)
     return fig
-
-#xaxis={'categoryorder': 'total descending'})  #category_orders= 'total descending',
-#.value_counts().sort_values(ascending=False)
 
 if __name__ == '__main__':
     application.run(host='0.0.0.0', port=8035)
@@ -417,7 +495,17 @@ if __name__ == '__main__':
 #%%
 # GRAPH SCRATCH
 
+def display_chart(stata, statb, statc, statd):
+    fig = px.scatter(tr_df, x='WIN%', y=[stata])
+    return fig
 
+
+#fig.update_layout(height=600, width=800, title_text="Side By Side Subplots")
+#shared_yaxes=True, horizontal_spacing=0.0025
+
+#fig.show(rendered='browser')
+
+#hover_data=['petal_width', 'petal_length']
 
 #histogram = px.histogram(test, x='Probability', color=TARGET,
 #                         marginal="box", nbins=30, opacity=0.6, range_x = [-5, 5]
@@ -427,22 +515,7 @@ if __name__ == '__main__':
 #%%
 
 
-#%%
-fig = make_subplots(rows=1, cols=2)
-fig.add_trace(go.Scatter(x=rollup_df[statb], y=rollup_df['WIN%'],
-                         title=f'{statb} HISTOGRAM', row=1, col=1))
 
-fig.add_trace(go.Scatter(x=[20, 30, 40], y=[50, 60, 70]), row=1, col=2)
-
-fig.update_layout(height=600, width=800, title_text="Side By Side Subplots")
-fig.show()
-
-
-
-
-
-#%%
-print(rollup_df['WIN%'].value_counts().sort_values(ascending=False))
 
 #%%
 # PLOTLY FILTER QUERIES
@@ -504,11 +577,6 @@ da_testtv = st.normaltest(df['traffic_volume'])
 da_testt = st.normaltest(df['temp'])
 shapiro_testtv = st.shapiro(df['traffic_volume'])
 shapiro_testt = st.shapiro(df['temp'])
-
-
-#%%
-rollup_df.dropna(inplace=True)
-print(rollup_df.info())
 
 #%%
 # NUMERICS
@@ -620,7 +688,104 @@ df_PCA.info()
 
 
 
+#%% [markdown]
+## VISUALIZATION INDEX:
+# 1) Line-plot
+# 2) Bar-plot (stacked, grouped)
+# 3) Count-plot
+# 4) Cat-plot
+# 5) Pie-chart
+# 6) Dis-plot
+# 7) Pair plot
+# 8) Heatmap
+# 9) Hist-plot
+# 10) QQ-plot
+# 11) Kernel density estimate
+# 12) Scatter plot and regression line (sklearn)
+# 13) Multivariate Box plot
+
 #%%
+# 1) Line-plot
+plt.figure(figsize=(10,10))
+sns.lineplot(data=tr_df, x='offensive-efficiency', y='defensive-efficiency', palette='magma', markers=True)
+plt.title('OFF. VS. DEF. EFFICIENCY (BY CONFERENCE)', fontsize=16)
+plt.xlabel('OFFENSIVE EFFICIENCY', fontsize=16)
+plt.ylabel('DEFENSIVE EFFICIENCY', fontsize=16)
+plt.legend(loc='best')
+
+plt.grid()
+plt.tight_layout(pad=1)
+
+for i in tr_df.index:
+  plt.text(tr_df['offensive-efficiency'][tr_data_hub.index==i]+.01,tr_data_hub['defensive-efficiency'][tr_data_hub.index==i]+.01,str(i), color='black')
+
+plt.show()
+
+
+#%%
+# 2) Bar-plot (stacked, grouped)
+
+
+#%%
+# 3) Count-plot
+
+
+#%%
+# 4) Cat-plot
+
+
+#%%
+# 5) Pie-chart
+
+
+#%%
+# 6) Dis-plot
+
+
+#%%
+# 7) Pair plot
+
+
+#%%
+# 8) Heatmap
+
+
+#%%
+# 9) Hist-plot
+
+
+#%%
+# 10) QQ-plot
+
+
+#%%
+# 11) Kernel density estimate
+
+
+#%%
+# 12) Scatter plot and regression line (sklearn)
+plt.figure(figsize=(10,10))
+sns.scatterplot(data=tr_df, x='offensive-efficiency', y='defensive-efficiency', palette='magma', markers=True)
+plt.title('OFF. VS. DEF. EFFICIENCY (BY CONFERENCE)', fontsize=16)
+plt.xlabel('OFFENSIVE EFFICIENCY', fontsize=16)
+plt.ylabel('DEFENSIVE EFFICIENCY', fontsize=16)
+plt.legend(loc='best')
+
+plt.grid()
+plt.tight_layout(pad=1)
+
+for i in tr_df.index:
+  plt.text(tr_df['offensive-efficiency'][tr_data_hub.index==i]+.01,tr_data_hub['defensive-efficiency'][tr_data_hub.index==i]+.01,str(i), color='black')
+
+plt.show()
+
+#%%
+# 13) Multivariate Box plot
+
+
+#%%
+
+14)	 Area plot (if applicable)
 
 qqplot(df['traffic_volume'])
 plt.title("QQ-plot of traffic volume ")
@@ -880,5 +1045,31 @@ table = go.Figure(data=[go.Table(
 ])
 table.update_layout(title_text=f'Sample records (n={len(test)})',
                     font_family='Tahoma')
+
+#%%
+
+html.H3('Slider 1'), \
+dcc.Slider(id='slider-1',
+           min=0,
+           max=20,
+           value=10)
+
+html.H3('Slider 2'),
+dcc.Slider(id='slider-2',
+           min=0,
+           max=20,
+           value=10)
+
+html.H3('Slider 3'),
+dcc.Slider(id='slider-3',
+           min=0,
+           max=20,
+           value=10)
+
+html.H3('Slider 4'),
+dcc.Slider(id='slider-4',
+           min=0,
+           max=20,
+           value=10)
 
 #%%

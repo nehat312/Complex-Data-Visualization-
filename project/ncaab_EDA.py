@@ -40,18 +40,15 @@ import re
 print("\nIMPORT SUCCESS")
 
 #%%
-# Absolute path of current folder
-#abspath_curr = '/content/drive/My Drive/SPORTS/NCAAB/'
+# Set absolute path of current folder
+abspath_curr = '/Users/nehat312/GitHub/Complex-Data-Visualization-/project'
 
-# Absolute path of shallow utilities folder
-#abspath_util_shallow = '/content/drive/My Drive/Colab Notebooks/teaching/gwu/machine_learning_I/spring_2022/code/utilities/p2_shallow_learning/'
-
-#%%
 # CLEAN DATA IMPORT
-rollup_filepath = '/Users/nehat312/GitHub/Complex-Data-Visualization-/project/data/ncaab_data_rollup_5-2-22'
-historical_filepath = '/Users/nehat312/GitHub/Complex-Data-Visualization-/project/data/MNCAAB-historical'
-tr_filepath = '/Users/nehat312/GitHub/Complex-Data-Visualization-/project/data/tr_data_hub_4-05-22'
-kp_filepath = '/Users/nehat312/GitHub/Complex-Data-Visualization-/project/data/kenpom_pull_3-14-22'
+rollup_filepath = abspath_curr + '/data/ncaab_data_rollup_5-2-22'
+historical_filepath = abspath_curr + '/data/MNCAAB-historical'
+tr_filepath = abspath_curr + '/data/tr_data_hub_4-05-22'
+kp_2022_filepath = abspath_curr + '/data/kenpom_pull_3-14-22'
+kp_hist_filepath = abspath_curr + '/data/kenpom_pull_3-14-22'
 
 # NOTE: PANDAS OPENPYXL PACKAGE / EXTENSION REQUIRED TO IMPORT .xlsx FILES
 
@@ -66,7 +63,8 @@ tourney = pd.read_excel(historical_filepath + '.xlsx', sheet_name='TOURNEY') #in
 tr = pd.read_excel(tr_filepath + '.xlsx') #index_col='Team'
 
 # KENPOM DATA
-kp = pd.read_excel(kp_filepath + '.xlsx') #index_col='Team'
+kp = pd.read_excel(kp_2022_filepath + '.xlsx') #index_col='Team'
+kp = pd.read_excel(kp_hist_filepath + '.xlsx') #index_col='Team'
 
 print("\nIMPORT SUCCESS")
 
@@ -89,16 +87,17 @@ print(regular.columns)
 print('*'*100)
 print(tourney.columns)
 
-#%% [markdown]
-# * Columns are identical across both historical game data sets (Regular Season / Tournament)
-
 #%%
 print(regular.info())
 print('*'*50)
 print(tourney.info())
 
+#%% [markdown]
+# * Columns are identical across both historical game data sets (Regular Season / Tournament)
+# * Elements of multi-collinearity exist throughout the data; PCA will be important towards feature selection
+
 #%%
-# REFINED DATAFRAMES - keeping only unique, essential, or most valuable columns from each data set.
+# REFINED DATAFRAMES - keeping only unique / essential / most valuable columns from each data set.
 
 tr_df = tr[['Team', 'win-pct-all-games',
                'average-scoring-margin', #'opponent-average-scoring-margin',
@@ -139,6 +138,23 @@ rollup_df = rollup[['TR_Team', 'win-pct-all-games',
                     'SOS Adj EM', 'SOS OppO', 'SOS OppD', 'NCSOS Adj EM'
                     ]]
 
+#%%
+# 2022 MARCH MADNESS (68 TEAMS)
+mm_2022 = rollup_df[rollup_df['Seed'] >= 1]
+mm_2022 = mm_2022.set_index('TR_Team')
+
+print(mm_2022.info())
+
+#%%
+# 2022 MARCH MADNESS (68 TEAMS)
+regular_mm_2022 = regular[regular['Seed_2022'] >= 1]
+regular_mm_2022 = regular_mm_2022.set_index('TR_Team')
+
+tourney_mm_2022 = tourney[tourney['Seed_2022'] >= 1]
+tourney_mm_2022 = tourney_mm_2022.set_index('TR_Team')
+
+print(regular_mm_2022.info())
+print(tourney_mm_2022.info())
 
 #%%
 # RENAME COLUMNS TO IMPROVE APP OPTICS
@@ -156,7 +172,6 @@ app_cols = {'Team': 'TEAM', 'win-pct-all-games':'WIN%',
             #'turnovers-per-game':'TO/GM', 'opponent-turnovers-per-game':'OPP_TO/GM',
             #'opponent-blocks-per-game':'OPP_BLK/GM', 'opponent-steals-per-game':'OPP_STL/GM', 'blocks-per-game':'B/GM', 'steals-per-game':'S/GM',
             }
-
 
 tr_cols = {'Team': 'TEAM', 'points-per-game':'PTS/GM', 'average-scoring-margin':'AVG_MARGIN', 'win-pct-all-games':'WIN%', 'win-pct-close-games':'WIN%_CLOSE',
             'effective-field-goal-pct':'EFG%', 'true-shooting-percentage':'TS%', 'effective-possession-ratio': 'POSS%',
@@ -193,12 +208,10 @@ print(tr_df.info())
 
 #%%
 # DATA ROLLUP - PRE-PROCESSING
-print(rollup.info())
-
-#%%
 # ROLLUP COLUMNS (FILTERED)
 print(rollup_df.columns)
 print('*'*100)
+print(rollup.info())
 
 # GBQ / KP COLS
 #print(f'BIG QUERY / KENPOM DATA:')
@@ -295,33 +308,35 @@ float_rollup = rollup_df[['WIN%', 'AVG_MARGIN', 'PTS/GM', 'OPP_PTS/GM', 'O_EFF',
 print(float_rollup.info())
 
 #%%
-#test = st.kstest(float_rollup['EFG%'], 'norm')
 da_testtv = st.normaltest(float_rollup['EFG%'])
-
 print(da_testtv)
 
 #%%
-## NORMALITY TESTS
-normality_df = pd.DataFrame()
-#for col in float_rollup.columns:
-
-normality_df['WIN%_KS'] = st.kstest(float_rollup['WIN%'], 'norm')
-
-    #kstest_t = st.kstest(df['temp'], 'norm')
-    #da_testtv = st.normaltest(df['traffic_volume'])
-    #da_testt = st.normaltest(df['temp'])
-    #shapiro_testtv = st.shapiro(df['traffic_volume'])
-    #shapiro_testt = st.shapiro(df['temp'])
-
-print(normality_df)
+print(float_rollup.info())
 #%%
 ## NORMALITY TESTS
-kstest_tv = st.kstest(df['traffic_volume'],'norm')
-kstest_t = st.kstest(df['temp'],'norm')
-da_testtv = st.normaltest(df['traffic_volume'])
-da_testt = st.normaltest(df['temp'])
-shapiro_testtv = st.shapiro(df['traffic_volume'])
-shapiro_testt = st.shapiro(df['temp'])
+normality_index=['STATISTIC', 'P-VALUE']
+KS_Test = pd.DataFrame(index=normality_index)
+DA_Test = pd.DataFrame(index=normality_index)
+Shapiro_Test = pd.DataFrame(index=normality_index)
+
+for col in float_rollup.columns:
+    KS_Test[col + '_KS']  = st.kstest(float_rollup[col], 'norm')
+    DA_Test[col + '_DA'] = st.normaltest(float_rollup[col])
+    Shapiro_Test[col + '_Shapiro'] = st.shapiro(float_rollup[col])
+
+print(f'KS NORMALITY TEST:')
+print(KS_Test.head())
+print('*'*75)
+print(f'DA NORMALITY TEST:')
+print(DA_Test.head())
+print('*'*75)
+print(f'SHAPIRO NORMALITY TEST:')
+print(Shapiro_Test.head())
+
+
+#%%
+
 
 #%%
 # NUMERICS
@@ -450,54 +465,39 @@ df_PCA.info()
 # 13) Multivariate Box plot
 
 # COLUMNS
-# * ['Season', 'DayNum', 'WTeamID', 'WScore', 'LTeamID', 'LScore', 'WLoc',
-#        'NumOT', 'WFGM', 'WFGA', 'WFGM3', 'WFGA3', 'WFTM', 'WFTA', 'WOR', 'WDR',
-#        'WAst', 'WTO', 'WStl', 'WBlk', 'WPF', 'LFGM', 'LFGA', 'LFGM3', 'LFGA3',
-#        'LFTM', 'LFTA', 'LOR', 'LDR', 'LAst', 'LTO', 'LStl', 'LBlk', 'LPF']
+    # * ['Season', 'DayNum', 'WTeamID', 'WScore', 'LTeamID', 'LScore', 'WLoc',
+    # 'NumOT', 'WFGM', 'WFGA', 'WFGM3', 'WFGA3', 'WFTM', 'WFTA', 'WOR', 'WDR',
+    # 'WAst', 'WTO', 'WStl', 'WBlk', 'WPF', 'LFGM', 'LFGA', 'LFGM3', 'LFGA3',
+    # 'LFTM', 'LFTA', 'LOR', 'LDR', 'LAst', 'LTO', 'LStl', 'LBlk', 'LPF']
 
 # CONFERENCES
-# A10
-# AAC
-# ACC
-# AE
-# AS
-# BIG10
-# BIG12
-# BIGEAST
-# BIGSKY
-# BIGSOUTH
-# BIGWEST
-# COLONIAL
-# CUSA
-# HORIZON
-# IVY
-# MAAC
-# MAC
-# MEAC
-# MVC
-# MWC
-# NE
-# OVC
-# PAC12
-# PATRIOT
-# SEC
-# SOUTHERN
-# SOUTHLAND
-# SUMMIT
-# SUNBELT
-# SWAC
-# WAC
-# WCC
+    # 'A10', 'AAC' 'ACC', 'AE', 'AS'
+    # 'BIG10', 'BIG12', 'BIGEAST', 'BIGSKY', 'BIGSOUTH', 'BIGWEST'
+    # 'COLONIAL', 'CUSA', 'HORIZON', 'IVY'
+    # 'MAAC', 'MAC', 'MEAC', 'MVC', 'MWC', 'NE'
+    # 'OVC', 'PAC12', 'PATRIOT', 'SEC', 'SOUTHERN', 'SOUTHLAND',
+    # 'SUMMIT', 'SUNBELT', 'SWAC', 'WAC', 'WCC'
+
+#%%
+# FEATURE ENGINEERING
+regular['WFG%'] = regular['WFGM'] / regular['WFGA']
+regular['LFG%'] = regular['LFGM'] / regular['LFGA']
+regular['WMargin'] = regular['WScore'] - regular['LScore']
+
 
 #%%
 # VARIABLES
 print(regular.index)
-print(regular['WTeamID'])
+
+
+#%%
+# THEMES / STYLES
+#sns.set_theme(style='darkgrid') #'whitegrid', 'ticks', 'white', 'dark'
 
 #%%
 # 1) Line-plot
 plt.figure(figsize=(8,6))
-sns.lineplot(data=regular, x='Season', y='WFGA3', palette='magma', markers=True)
+sns.lineplot(data=regular, x='Date', y='WFGA3', palette='magma', markers=True)
 plt.title('WINNER 3PT ATTEMPTS BY SEASON', fontsize=16)
 plt.xlabel('SEASON', fontsize=16)
 plt.ylabel('WINNER 3PT ATTEMPTS', fontsize=16)
@@ -514,15 +514,57 @@ plt.show()
 
 #%%
 # 2) Bar-plot (stacked, grouped)
+plt.figure(figsize=(8,6))
+sns.barplot(data=regular_mm_2022, x='Season', y='WFGA3', palette='magma') #stack #group #hue='Conference',
+plt.title('TBU', fontsize=16)
+plt.xlabel('TBU', fontsize=16)
+plt.ylabel('TBU', fontsize=16)
+plt.legend(loc='best')
 
+plt.grid()
+plt.tight_layout(pad=1)
+
+plt.show()
+
+#%%
+#conf_count = regular['Conference'].value_counts()
+conf_count = regular.groupby(['Conference']).count()
+conf_mean = regular.groupby(['Conference']).mean()
+print(conf_count)
+print('*'*100)
+print(conf_mean)
+
+#%%
+#print(conf_count.info())
+#print(regular.Date)
 
 #%%
 # 3) Count-plot
+plt.figure(figsize=(16,8))
+sns.countplot(data=regular, x='Conference', palette='mako', order=regular['Conference'].value_counts(ascending=False).index)
+plt.title('GAMES PLAYED BY CONFERENCE [2002-2022]', fontsize=20)
+plt.xlabel('CONFERENCE', fontsize=16)
+plt.ylabel('TOTAL GAMES PLAYED', fontsize=16)
+plt.legend(loc='best')
 
+plt.grid()
+plt.tight_layout(pad=1)
+
+plt.show()
 
 #%%
 # 4) Cat-plot
+plt.figure(figsize=(16,8))
+sns.catplot(data=regular, x='Conference', palette='mako', order=regular['Conference'].value_counts(ascending=False).index)
+plt.title('GAMES PLAYED BY CONFERENCE [2002-2022]', fontsize=20)
+plt.xlabel('CONFERENCE', fontsize=16)
+plt.ylabel('TOTAL GAMES PLAYED', fontsize=16)
+plt.legend(loc='best')
 
+plt.grid()
+plt.tight_layout(pad=1)
+
+plt.show()
 
 #%%
 # 5) Pie-chart
@@ -538,7 +580,15 @@ plt.show()
 
 #%%
 # 8) Heatmap
+# create correlation variables relative to rest of DataFrame
+rank_corr = mm_2022.corr()[['Rank']].sort_values(by='Rank', ascending=False)
+seed_corr = mm_2022.corr()[['Seed']].sort_values(by='Seed', ascending=False)
 
+# create heatmap to visualize correlation variable
+# SUBPLOTS
+plt.figure(figsize=(10, 8))
+sns.heatmap(rank_corr, annot=True, cmap='flare', vmin=-1, vmax=1, linecolor='white', linewidth=2);
+# sns.heatmap(seed_corr, annot = True, cmap = 'flare', vmin=-1, vmax=1, linecolor = 'white', linewidth = 2);
 
 #%%
 # 9) Hist-plot
@@ -547,10 +597,23 @@ plt.show()
 #%%
 # 10) QQ-plot
 
+#%%
+
+
+#%%
+print(regular.columns)
+print(regular.info())
 
 #%%
 # 11) Kernel density estimate
-
+sns.kdeplot(data=regular,
+            x='WMargin',
+            bw_adjust=.2,
+            cut=0,
+            hue='Month',
+            multiple='stack', #fill
+            )
+plt.show()
 
 #%%
 # 12) Scatter plot and regression line (sklearn)
@@ -580,6 +643,12 @@ plt.show()
 qqplot(df['traffic_volume'])
 plt.title("QQ-plot of traffic volume ")
 plt.show()
+
+#%%
+
+sns.relplot(data = regular, x = 'year', y = 'passengers', hue = 'month', kind='line', col='time', row='smoker')
+plt.show()
+
 #%%
 
 # SCATTERPLOT -
