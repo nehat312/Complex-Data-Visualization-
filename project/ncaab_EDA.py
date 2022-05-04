@@ -34,9 +34,6 @@ import requests
 from bs4 import BeautifulSoup
 import re
 
-#import json
-#import nltk
-
 print("\nIMPORT SUCCESS")
 
 #%%
@@ -48,7 +45,6 @@ rollup_filepath = abspath_curr + '/data/ncaab_data_rollup_5-2-22'
 historical_filepath = abspath_curr + '/data/MNCAAB-historical'
 tr_filepath = abspath_curr + '/data/tr_data_hub_4-05-22'
 kp_2022_filepath = abspath_curr + '/data/kenpom_pull_3-14-22'
-kp_hist_filepath = abspath_curr + '/data/kenpom_pull_3-14-22'
 
 # NOTE: PANDAS OPENPYXL PACKAGE / EXTENSION REQUIRED TO IMPORT .xlsx FILES
 
@@ -63,26 +59,23 @@ tourney = pd.read_excel(historical_filepath + '.xlsx', sheet_name='TOURNEY') #in
 tr = pd.read_excel(tr_filepath + '.xlsx') #index_col='Team'
 
 # KENPOM DATA
-kp = pd.read_excel(kp_2022_filepath + '.xlsx') #index_col='Team'
-kp = pd.read_excel(kp_hist_filepath + '.xlsx') #index_col='Team'
+kp_2022 = pd.read_excel(kp_2022_filepath + '.xlsx') #index_col='Team'
 
 print("\nIMPORT SUCCESS")
 
 #%%
-# FINAL PRE-PROCESSING
+# FEATURE ENGINEERING
 tr['opponent-stocks-per-game'] = tr['opponent-blocks-per-game'] + tr['opponent-steals-per-game']
 rollup['opponent-stocks-per-game'] = rollup['opponent-blocks-per-game'] + rollup['opponent-steals-per-game']
+
+# FEATURE ENGINEERING
+regular['WFG%'] = regular['WFGM'] / regular['WFGA']
+regular['LFG%'] = regular['LFGM'] / regular['LFGA']
+regular['WMargin'] = regular['WScore'] - regular['LScore']
 
 tr = tr.round(2)
 rollup = rollup.round(2)
 
-print(tr.head())
-#print(tr.info())
-#print(tr.index)
-#print(tr)
-
-
-#%%
 print(regular.columns)
 print('*'*100)
 print(tourney.columns)
@@ -97,7 +90,8 @@ print(tourney.info())
 # * Elements of multi-collinearity exist throughout the data; PCA will be important towards feature selection
 
 #%%
-# REFINED DATAFRAMES - keeping only unique / essential / most valuable columns from each data set.
+# REFINED DATAFRAMES
+    # Keeping only unique / essential / most valuable columns from each data set.
 
 tr_df = tr[['Team', 'win-pct-all-games',
                'average-scoring-margin', #'opponent-average-scoring-margin',
@@ -143,18 +137,16 @@ rollup_df = rollup[['TR_Team', 'win-pct-all-games',
 mm_2022 = rollup_df[rollup_df['Seed'] >= 1]
 mm_2022 = mm_2022.set_index('TR_Team')
 
-print(mm_2022.info())
-
-#%%
 # 2022 MARCH MADNESS (68 TEAMS)
-regular_mm_2022 = regular[regular['Seed_2022'] >= 1]
-regular_mm_2022 = regular_mm_2022.set_index('TR_Team')
+regular_mm = regular[regular['Seed_2022'] >= 1]
+regular_mm = regular_mm.set_index('TR_Team')
 
-tourney_mm_2022 = tourney[tourney['Seed_2022'] >= 1]
-tourney_mm_2022 = tourney_mm_2022.set_index('TR_Team')
+tourney_mm = tourney[tourney['Seed'] >= 1]
+tourney_mm = tourney_mm.set_index('TR_Team')
 
-print(regular_mm_2022.info())
-print(tourney_mm_2022.info())
+print(regular_mm.info())
+print(tourney_mm.info())
+#print(mm_2022.info())
 
 #%%
 # RENAME COLUMNS TO IMPROVE APP OPTICS
@@ -173,57 +165,6 @@ app_cols = {'Team': 'TEAM', 'win-pct-all-games':'WIN%',
             #'opponent-blocks-per-game':'OPP_BLK/GM', 'opponent-steals-per-game':'OPP_STL/GM', 'blocks-per-game':'B/GM', 'steals-per-game':'S/GM',
             }
 
-tr_cols = {'Team': 'TEAM', 'points-per-game':'PTS/GM', 'average-scoring-margin':'AVG_MARGIN', 'win-pct-all-games':'WIN%', 'win-pct-close-games':'WIN%_CLOSE',
-            'effective-field-goal-pct':'EFG%', 'true-shooting-percentage':'TS%', 'effective-possession-ratio': 'POSS%',
-            'three-point-pct':'3P%', 'two-point-pct':'2P%', 'free-throw-pct':'FT%',
-            'field-goals-made-per-game':'FGM/GM', 'field-goals-attempted-per-game':'FGA/GM', 'three-pointers-made-per-game':'3PM/GM', 'three-pointers-attempted-per-game':'3PA/GM',
-            'offensive-efficiency':'O_EFF', 'defensive-efficiency':'D_EFF',
-            'total-rebounds-per-game':'TRB/GM', 'offensive-rebounds-per-game':'ORB/GM', 'defensive-rebounds-per-game':'DRB/GM',
-            'offensive-rebounding-pct':'ORB%', 'defensive-rebounding-pct':'DRB%', 'total-rebounding-percentage':'TRB%',
-            'blocks-per-game':'B/GM', 'steals-per-game':'S/GM', 'assists-per-game':'AST/GM', 'turnovers-per-game':'TO/GM',
-            'assist--per--turnover-ratio':'AST/TO', 'possessions-per-game':'POSS/GM', 'personal-fouls-per-game':'PF/GM',
-            'opponent-points-per-game':'OPP_PTS/GM', 'opponent-average-scoring-margin':'OPP_AVG_MARGIN',
-            'opponent-effective-field-goal-pct':'OPP_EFG%', 'opponent-true-shooting-percentage':'OPP_TS%',
-            'opponent-three-point-pct':'OPP_3P%', 'opponent-two-point-pct':'OPP_2P%', 'opponent-free-throw-pct':'OPP_FT%', 'opponent-shooting-pct':'OPP_FG%',
-            'opponent-assists-per-game':'OPP_AST/GM', 'opponent-turnovers-per-game':'OPP_TO/GM', 'opponent-assist--per--turnover-ratio':'OPP_AST/TO',
-            'opponent-offensive-rebounds-per-game':'OPP_OREB/GM', 'opponent-defensive-rebounds-per-game':'OPP_DREB/GM', 'opponent-total-rebounds-per-game':'OPP_TREB/GM',
-            'opponent-offensive-rebounding-pct':'OPP_OREB%', 'opponent-defensive-rebounding-pct':'OPP_DREB%',
-            'opponent-blocks-per-game':'OPP_BLK/GM', 'opponent-steals-per-game':'OPP_STL/GM',
-            'opponent-effective-possession-ratio':'OPP_POSS%',
-            'net-avg-scoring-margin':'NET_AVG_MARGIN', 'net-points-per-game':'NET_PTS/GM',
-            'net-adj-efficiency':'NET_EFF',
-            'net-effective-field-goal-pct':'NET_EFG%', 'net-true-shooting-percentage':'NET_TS%',
-            'stocks-per-game':'S+B/GM', 'opponent-stocks-per-game':'OPP_S+B/GM', 'total-turnovers-per-game':'TTL_TO/GM',
-            'net-assist--per--turnover-ratio':'NET_AST/TO',
-            'net-total-rebounds-per-game':'NET_TREB/GM', 'net-off-rebound-pct':'NET_OREB%', 'net-def-rebound-pct':'NET_DREB%'
-            }
-
-print(tr_df.info())
-
-#%%
-tr_df.columns = tr_df.columns.map(app_cols)
-
-print(tr_df.columns)
-print(tr_df.info())
-
-#%%
-# DATA ROLLUP - PRE-PROCESSING
-# ROLLUP COLUMNS (FILTERED)
-print(rollup_df.columns)
-print('*'*100)
-print(rollup.info())
-
-# GBQ / KP COLS
-#print(f'BIG QUERY / KENPOM DATA:')
-#print(rollup_df.columns[63:]) #print(rollup.columns[-40:])
-
-#%%
-# DROP NULL VALUES
-rollup_df.dropna(inplace=True)
-print(rollup_df.info())
-
-#%%
-# PRE-PROCESSING ROLLUP FILE
 roll_cols = {'TR_Team': 'TEAM', 'win-pct-all-games':'WIN%',
             'average-scoring-margin':'AVG_MARGIN', #'opponent-average-scoring-margin':'OPP_AVG_MARGIN',
             'points-per-game': 'PTS/GM',  'opponent-points-per-game':'OPP_PTS/GM',
@@ -251,50 +192,34 @@ roll_cols = {'TR_Team': 'TEAM', 'win-pct-all-games':'WIN%',
 #%%
 # MAP COLUMN LABELING TO DATAFRAME
 rollup_df.columns = rollup_df.columns.map(roll_cols)
+tr_df.columns = tr_df.columns.map(app_cols)
 
 print(rollup_df.columns)
+print('*'*100)
 print(rollup_df.info())
 
 
 #%%
-# GRAPH SCRATCH
+# DROP NULL VALUES
+rollup_df.dropna(inplace=True)
+print(rollup_df.info())
+#regular.dropna(inplace=True)
+#tourney.dropna(inplace=True)
 
-def display_chart(stata, statb, statc, statd):
-    fig = px.scatter(tr_df, x='WIN%', y=[stata])
-    return fig
-
-
-#fig.update_layout(height=600, width=800, title_text="Side By Side Subplots")
-#shared_yaxes=True, horizontal_spacing=0.0025
-
-#fig.show(rendered='browser')
-
-#hover_data=['petal_width', 'petal_length']
-
-#histogram = px.histogram(test, x='Probability', color=TARGET,
-#                         marginal="box", nbins=30, opacity=0.6, range_x = [-5, 5]
-#                         color_discrete_sequence=['#FFBD59',
-#                                                  '#3BA27A'])
-
-#%%
-
-
-
-
-#%%
 
 #%% [markdown]
 # * NORMALITY TESTS
 # *
 
 #%%
-print(rollup_df.columns)
-print(rollup_df.info())
-
-
-#%%
 rollup_df.index = rollup_df['TEAM']
 rollup_df.drop(columns='TEAM', inplace=True)
+
+regular.index = regular['TR_Team']
+regular.drop(columns='TR_Team', inplace=True)
+
+tourney.index = tourney['TR_Team']
+tourney.drop(columns='TR_Team', inplace=True)
 
 #%%
 float_rollup = rollup_df[['WIN%', 'AVG_MARGIN', 'PTS/GM', 'OPP_PTS/GM', 'O_EFF', 'D_EFF',
@@ -464,13 +389,7 @@ df_PCA.info()
 # 12) Scatter plot and regression line (sklearn)
 # 13) Multivariate Box plot
 
-# COLUMNS
-    # * ['Season', 'DayNum', 'WTeamID', 'WScore', 'LTeamID', 'LScore', 'WLoc',
-    # 'NumOT', 'WFGM', 'WFGA', 'WFGM3', 'WFGA3', 'WFTM', 'WFTA', 'WOR', 'WDR',
-    # 'WAst', 'WTO', 'WStl', 'WBlk', 'WPF', 'LFGM', 'LFGA', 'LFGM3', 'LFGA3',
-    # 'LFTM', 'LFTA', 'LOR', 'LDR', 'LAst', 'LTO', 'LStl', 'LBlk', 'LPF']
-
-# CONFERENCES
+# NCAA CONFERENCES
     # 'A10', 'AAC' 'ACC', 'AE', 'AS'
     # 'BIG10', 'BIG12', 'BIGEAST', 'BIGSKY', 'BIGSOUTH', 'BIGWEST'
     # 'COLONIAL', 'CUSA', 'HORIZON', 'IVY'
@@ -478,17 +397,37 @@ df_PCA.info()
     # 'OVC', 'PAC12', 'PATRIOT', 'SEC', 'SOUTHERN', 'SOUTHLAND',
     # 'SUMMIT', 'SUNBELT', 'SWAC', 'WAC', 'WCC'
 
-#%%
-# FEATURE ENGINEERING
-regular['WFG%'] = regular['WFGM'] / regular['WFGA']
-regular['LFG%'] = regular['LFGM'] / regular['LFGA']
-regular['WMargin'] = regular['WScore'] - regular['LScore']
+
+# DATETIME FEATURES OF INTEREST
+    # 'Date', 'Month'
+
+# NUMERIC FEATURES OF INTEREST
+    # 'Win', 'Loss', 'Seed'. 'WScore', 'LScore', 'WMargin',
+    # 'Venue_Capacity', 'WFG%', 'LFG%', 'NumOT'
+    # 'KP_Rank', 'KP_ADJ_EM', 'KP_ADJ_O', 'KP_ADJ_D',
+
+# CATEGORICAL FEATURES OF INTEREST
+    # 'Conference', 'Mascot', 'City', 'State', 'Venue',
+    # 'tax_family', 'tax_order', 'tax_class', 'tax_phylum',
+    # 'tax_kingdom', 'tax_domain',
+
+# COLUMNS
+    # * ['Season', 'DayNum', 'Date', 'Month', 'WTeamID', 'Conference', 'Win',
+#        'Loss', 'Seed_2022', 'KP_Rank_2022', 'Seed', 'KP_Rank', 'KP_ADJ_EM',
+#        'KP_ADJ_O', 'KP_ADJ_D', 'Mascot', 'Mascot2', 'City', 'State', 'Venue',
+#        'Venue_Capacity', 'tax_family', 'tax_order', 'tax_class', 'tax_phylum',
+#        'tax_kingdom', 'tax_domain', 'WScore', 'LTeamID', 'LScore', 'WLoc',
+#        'NumOT', 'WFGM', 'WFGA', 'WFGM3', 'WFGA3', 'WFTM', 'WFTA', 'WOR', 'WDR',
+#        'WAst', 'WTO', 'WStl', 'WBlk', 'WPF', 'LFGM', 'LFGA', 'LFGM3', 'LFGA3',
+#        'LFTM', 'LFTA', 'LOR', 'LDR', 'LAst', 'LTO', 'LStl', 'LBlk', 'LPF',
+#        'WFG%', 'LFG%', 'WMargin']
 
 
 #%%
 # VARIABLES
 print(regular.index)
-
+print(tourney.index)
+print(regular.columns)
 
 #%%
 # THEMES / STYLES
@@ -497,8 +436,12 @@ print(regular.index)
 #%%
 # 1) Line-plot
 plt.figure(figsize=(8,6))
-sns.lineplot(data=regular, x='Date', y='WFGA3', palette='magma', markers=True)
-plt.title('WINNER 3PT ATTEMPTS BY SEASON', fontsize=16)
+sns.lineplot(data=regular, x='Date', y='WMargin',
+             palette='magma',
+             markers=True,
+             # hue='Seed',
+             )
+plt.title('WINNER 3PT ATTEMPTS BY SEASON [2004-2022]', fontsize=20)
 plt.xlabel('SEASON', fontsize=16)
 plt.ylabel('WINNER 3PT ATTEMPTS', fontsize=16)
 plt.legend(loc='best')
@@ -511,20 +454,24 @@ plt.tight_layout(pad=1)
 
 plt.show()
 
-
 #%%
 # 2) Bar-plot (stacked, grouped)
 plt.figure(figsize=(8,6))
-sns.barplot(data=regular_mm_2022, x='Season', y='WFGA3', palette='magma') #stack #group #hue='Conference',
-plt.title('TBU', fontsize=16)
-plt.xlabel('TBU', fontsize=16)
-plt.ylabel('TBU', fontsize=16)
+sns.barplot(data=regular_mm, x='Seed', y='Win',
+            palette='mako',
+            #stack #group #hue='Conference',
+            )
+plt.title('AVG. WINS/YR BY SEED [2004-2022]', fontsize=20)
+plt.xlabel('TOURNAMENT SEED', fontsize=16)
+plt.ylabel('AVG. WINS/YR', fontsize=16)
 plt.legend(loc='best')
 
 plt.grid()
 plt.tight_layout(pad=1)
 
 plt.show()
+
+#fig.update_layout(barmode='stack')
 
 #%%
 #conf_count = regular['Conference'].value_counts()
@@ -535,14 +482,12 @@ print('*'*100)
 print(conf_mean)
 
 #%%
-#print(conf_count.info())
-#print(regular.Date)
-
-#%%
 # 3) Count-plot
 plt.figure(figsize=(16,8))
-sns.countplot(data=regular, x='Conference', palette='mako', order=regular['Conference'].value_counts(ascending=False).index)
-plt.title('GAMES PLAYED BY CONFERENCE [2002-2022]', fontsize=20)
+sns.countplot(data=regular, x='Conference',
+              palette='mako',
+              order=regular['Conference'].value_counts(ascending=False).index)
+plt.title('GAMES PLAYED BY CONFERENCE [2004-2022]', fontsize=20)
 plt.xlabel('CONFERENCE', fontsize=16)
 plt.ylabel('TOTAL GAMES PLAYED', fontsize=16)
 plt.legend(loc='best')
@@ -554,11 +499,13 @@ plt.show()
 
 #%%
 # 4) Cat-plot
-plt.figure(figsize=(16,8))
-sns.catplot(data=regular, x='Conference', palette='mako', order=regular['Conference'].value_counts(ascending=False).index)
-plt.title('GAMES PLAYED BY CONFERENCE [2002-2022]', fontsize=20)
-plt.xlabel('CONFERENCE', fontsize=16)
-plt.ylabel('TOTAL GAMES PLAYED', fontsize=16)
+plt.figure(figsize=(8,6))
+sns.catplot(data=regular, x='Seed',
+            palette='mako',
+            order=regular['Seed'].value_counts(ascending=False).index)
+plt.title('TBU [2004-2022]', fontsize=20)
+plt.xlabel('TBU', fontsize=16)
+plt.ylabel('TBU', fontsize=16)
 plt.legend(loc='best')
 
 plt.grid()
@@ -568,24 +515,55 @@ plt.show()
 
 #%%
 # 5) Pie-chart
-
+sns.
 
 #%%
 # 6) Dis-plot
+plt.figure(figsize=(8,6))
+sns.displot(data=regular, x='Seed',
+            palette='mako',
+            #order=regular['Seed'].value_counts(ascending=False).index,
+            row='Conference',
+            kind='hist',
+            #column='',
+            #rug=True,
+            )
+plt.title('TBU [2004-2022]', fontsize=20)
+plt.xlabel('TBU', fontsize=16)
+plt.ylabel('TBU', fontsize=16)
+plt.legend(loc='best')
 
+plt.grid()
+plt.tight_layout(pad=1)
+
+plt.show()
 
 #%%
 # 7) Pair plot
+pair_vars = regular[['Win', 'Seed', #'Loss',
+                     'WMargin', #'WScore', 'LScore',
+                     #'WFG%', 'LFG%', #'Venue_Capacity',
+                     #'KP_ADJ_EM', #'KP_ADJ_O', 'KP_ADJ_D', 'KP_Rank',
+                     ]]
 
+plt.figure(figsize=(12,12))
+sns.pairplot(data=pair_vars, palette='mako')
+plt.title('PAIRPLOT [2004-2022]', fontsize=20)
+#plt.xlabel('TBU', fontsize=16)
+#plt.ylabel('TBU', fontsize=16)
+plt.legend(loc='best')
+
+plt.grid()
+plt.tight_layout(pad=1)
+
+plt.show()
 
 #%%
 # 8) Heatmap
 # create correlation variables relative to rest of DataFrame
-rank_corr = mm_2022.corr()[['Rank']].sort_values(by='Rank', ascending=False)
-seed_corr = mm_2022.corr()[['Seed']].sort_values(by='Seed', ascending=False)
+rank_corr = regular_mm.corr()[['AVG_MARGIN']].sort_values(by='AVG_MARGIN', ascending=False)
 
 # create heatmap to visualize correlation variable
-# SUBPLOTS
 plt.figure(figsize=(10, 8))
 sns.heatmap(rank_corr, annot=True, cmap='flare', vmin=-1, vmax=1, linecolor='white', linewidth=2);
 # sns.heatmap(seed_corr, annot = True, cmap = 'flare', vmin=-1, vmax=1, linecolor = 'white', linewidth = 2);
@@ -593,12 +571,31 @@ sns.heatmap(rank_corr, annot=True, cmap='flare', vmin=-1, vmax=1, linecolor='whi
 #%%
 # 9) Hist-plot
 
+plt.figure(figsize=(8,6))
+sns.histplot(data=regular, x='Seed',
+             palette='mako',
+             binwidth=3,
+             #bins=30,
+             #order=regular['Seed'].value_counts(ascending=False).index,
+             #row='Conference',
+             #column='',
+             #rug=True,
+             )
+plt.title('TBU [2004-2022]', fontsize=20)
+plt.xlabel('TBU', fontsize=16)
+plt.ylabel('TBU', fontsize=16)
+plt.legend(loc='best')
+
+plt.grid()
+plt.tight_layout(pad=1)
+
+plt.show()
 
 #%%
 # 10) QQ-plot
 
 #%%
-
+print('test')
 
 #%%
 print(regular.columns)
