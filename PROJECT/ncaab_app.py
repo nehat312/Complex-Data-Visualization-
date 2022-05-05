@@ -40,16 +40,9 @@ import re
 print("\nIMPORT SUCCESS")
 
 #%%
-# Absolute path of current folder
-#abspath_curr = '/content/drive/My Drive/SPORTS/NCAAB/'
-
-# Absolute path of shallow utilities folder
-#abspath_util_shallow = '/content/drive/My Drive/Colab Notebooks/teaching/gwu/machine_learning_I/spring_2022/code/utilities/p2_shallow_learning/'
-
-#%%
 # CLEAN DATA IMPORT
 rollup_filepath = '/Users/nehat312/GitHub/Complex-Data-Visualization-/project/data/ncaab_data_rollup_5-2-22'
-historical_filepath = '/Users/nehat312/GitHub/Complex-Data-Visualization-/project/data/MNCAAB-historical'
+
 tr_filepath = '/Users/nehat312/GitHub/Complex-Data-Visualization-/project/data/tr_data_hub_4-05-22'
 kp_filepath = '/Users/nehat312/GitHub/Complex-Data-Visualization-/project/data/kenpom_pull_3-14-22'
 
@@ -58,15 +51,16 @@ kp_filepath = '/Users/nehat312/GitHub/Complex-Data-Visualization-/project/data/k
 # ROLLED-UP DATA
 rollup = pd.read_excel(rollup_filepath + '.xlsx', sheet_name='ROLLUP') #index_col='Team'
 
-# HISTORICAL GAME DATA
-regular = pd.read_excel(historical_filepath + '.xlsx', sheet_name='REGULAR') #index_col='Team'
-tourney = pd.read_excel(historical_filepath + '.xlsx', sheet_name='TOURNEY') #index_col='Team'
-
 # TEAMRANKINGS DATA
 tr = pd.read_excel(tr_filepath + '.xlsx') #index_col='Team'
 
 # KENPOM DATA
 kp = pd.read_excel(kp_filepath + '.xlsx') #index_col='Team'
+
+# HISTORICAL GAME DATA
+#historical_filepath = '/Users/nehat312/GitHub/Complex-Data-Visualization-/project/data/MNCAAB-historical'
+#regular = pd.read_excel(historical_filepath + '.xlsx', sheet_name='REGULAR') #index_col='Team'
+#tourney = pd.read_excel(historical_filepath + '.xlsx', sheet_name='TOURNEY') #index_col='Team'
 
 print("\nIMPORT SUCCESS")
 
@@ -82,20 +76,6 @@ print(tr.head())
 #print(tr.info())
 #print(tr.index)
 #print(tr)
-
-
-#%%
-print(regular.columns)
-print('*'*100)
-print(tourney.columns)
-
-#%% [markdown]
-# * Columns are identical across both historical game data sets (Regular Season / Tournament)
-
-#%%
-print(regular.info())
-print('*'*50)
-print(tourney.info())
 
 #%%
 # REFINED DATAFRAMES - keeping only unique, essential, or most valuable columns from each data set.
@@ -183,8 +163,6 @@ tr_cols = {'Team': 'TEAM', 'points-per-game':'PTS/GM', 'average-scoring-margin':
             'net-total-rebounds-per-game':'NET_TREB/GM', 'net-off-rebound-pct':'NET_OREB%', 'net-def-rebound-pct':'NET_DREB%'
             }
 
-print(tr_df.info())
-
 #%%
 tr_df.columns = tr_df.columns.map(app_cols)
 
@@ -248,65 +226,6 @@ print(rollup_df.info())
 
 #%%
 
-def discrete_background_color_bins(df, n_bins=5, columns='all'):
-    import colorlover
-    bounds = [i * (1.0 / n_bins) for i in range(n_bins + 1)]
-    if columns == 'all':
-        if 'id' in df:
-            df_numeric_columns = df.select_dtypes('number').drop(['id'], axis=1)
-        else:
-            df_numeric_columns = df.select_dtypes('number')
-    else:
-        df_numeric_columns = df[columns]
-    df_max = df_numeric_columns.max().max()
-    df_min = df_numeric_columns.min().min()
-    ranges = [
-        ((df_max - df_min) * i) + df_min
-        for i in bounds
-    ]
-    styles = []
-    legend = []
-    for i in range(1, len(bounds)):
-        min_bound = ranges[i - 1]
-        max_bound = ranges[i]
-        backgroundColor = colorlover.scales[str(n_bins)]['seq']['Blues'][i - 1]
-        color = 'white' if i > len(bounds) / 2. else 'inherit'
-
-        for column in df_numeric_columns:
-            styles.append({
-                'if': {
-                    'filter_query': (
-                        '{{{column}}} >= {min_bound}' +
-                        (' && {{{column}}} < {max_bound}' if (i < len(bounds) - 1) else '')
-                    ).format(column=column, min_bound=min_bound, max_bound=max_bound),
-                    'column_id': column
-                },
-                'backgroundColor': backgroundColor,
-                'color': color
-            })
-        legend.append(
-            html.Div(style={'display': 'inline-block', 'width': '60px'}, children=[
-                html.Div(
-                    style={
-                        'backgroundColor': backgroundColor,
-                        'borderLeft': '1px rgb(50, 50, 50) solid',
-                        'height': '10px'
-                    }
-                ),
-                html.Small(round(min_bound, 2), style={'paddingLeft': '2px'})
-            ])
-        )
-
-    return (styles, html.Div(legend, style={'padding': '5px 0 5px 0'}))
-
-(styles, legend) = discrete_background_color_bins(tr_df)
-
-print(styles)
-print(legend)
-
-
-#%%
-
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 ncaab_app = dash.Dash('NCAAM BASKETBALL DASHBOARD', external_stylesheets=external_stylesheets) #
 application = ncaab_app.server
@@ -356,7 +275,7 @@ team_viz_layout = html.Div([html.H1('TEAM DATABASE',
                                                     style_header={'backgroundColor': '#7FDBFF', 'color': 'black',
                                                                   'fontWeight': 'bold', 'border': '2px solid black'},
                                                     sort_action='native',
-                                                    style_data_conditional = [styles],
+                                                    #style_data_conditional = [styles],
                                                  ),
                             ])
 
@@ -458,618 +377,28 @@ def update_layout(tab):
     elif tab == 'CAT VIZ':
         return cat_viz_layout
 
+
 # TEAM VIZ CALLBACK
 @ncaab_app.callback(Output(component_id='tr-df', component_property='figure'),
                     [Input(component_id='statb', component_property='value'),])
-                     #Input(component_id='stata', component_property='value')
 
 def display_dataframe(df):
     return df
 
-# STAT VIZ CALLBACK
-#@ncaab_app.callback(Output(component_id='charta', component_property='figure'),
-#                    [Input(component_id='stata', component_property='value'),])
-
-#def display_chart(stata, statb, statc, statd): #
-    #fig = px.scatter(tr_df, x='WIN%', y=[stata])
 
 # CAT VIZ CALLBACK
 @ncaab_app.callback(Output(component_id='chartb', component_property='figure'),
                      [Input(component_id='statb', component_property='value')])
 
-def display_chart(statb): #
+def display_chart(statb):
     fig = px.histogram(data_frame=rollup_df, x=rollup_df[statb], title=f'{statb} HISTOGRAM',
                        marginal="box", nbins=30, opacity=0.75,
                        color_discrete_sequence=['#009B9E', '#C75DAB'],  #'#FFBD59', '#3BA27A'
 
                        ) # hover data - school venue? team performance?
-    #fig.update_layout(yaxis={'categoryorder': 'total ascending'})
-    # xaxis={'categoryorder': 'total descending'})  #category_orders= 'total descending',
-    # .value_counts().sort_values(ascending=False)
     return fig
 
 if __name__ == '__main__':
     application.run(host='0.0.0.0', port=8035)
-
-
-#%%
-# GRAPH SCRATCH
-
-def display_chart(stata, statb, statc, statd):
-    fig = px.scatter(tr_df, x='WIN%', y=[stata])
-    return fig
-
-
-#fig.update_layout(height=600, width=800, title_text="Side By Side Subplots")
-#shared_yaxes=True, horizontal_spacing=0.0025
-
-#fig.show(rendered='browser')
-
-#hover_data=['petal_width', 'petal_length']
-
-#histogram = px.histogram(test, x='Probability', color=TARGET,
-#                         marginal="box", nbins=30, opacity=0.6, range_x = [-5, 5]
-#                         color_discrete_sequence=['#FFBD59',
-#                                                  '#3BA27A'])
-
-#%%
-
-
-
-
-#%%
-# PLOTLY FILTER QUERIES
-#{'if': {'row_index': [2,3,6,7,10,11]}, 'backgroundColor': 'rgb(211, 211, 211)'},
-#{'if': {'filter_query': '{FINAL} > 105', 'column_id': 'FINAL', 'row_index': [0,1]},
-#'color': '#2ECC40', 'fontWeight': 'bold'}, #'backgroundColor': 'red':'#2ECC40', gray?: '#FF4136'
-
-##{'if': {'filter_query': '{MODEL_PREDICTION} = "LOSS"','column_id': 'MODEL_PREDICTION'},
-#'color': 'black', 'backgroundColor': '#FF4136', 'fontWeight': 'bold'}, # RED '#FF4136' / GREEN '#2ECC40'
-# {'if': {'column_id': 'MODEL_PREDICTION'}, 'fontWeight': 'bold',},], #'#01FF70'  'backgroundColor': '#01FF70',
-
-#%% [markdown]
-# * NORMALITY TESTS
-# *
-
-#%%
-print(rollup_df.columns)
-print(rollup_df.info())
-
-
-#%%
-rollup_df.index = rollup_df['TEAM']
-rollup_df.drop(columns='TEAM', inplace=True)
-
-#%%
-float_rollup = rollup_df[['WIN%', 'AVG_MARGIN', 'PTS/GM', 'OPP_PTS/GM', 'O_EFF', 'D_EFF',
-                          'NET_EFF', 'EFG%', 'OPP_EFG%', '3P%', '2P%', 'FT%',
-                          'OPP_3P%', 'OPP_2P%', 'OPP_FT%', 'AST/GM', 'OPP_AST/GM', 'AST/TO', 'OPP_AST/TO',
-                          'S+B/GM', 'OPP_S+B/GM',
-                          'ARENA_CAP', 'KP_RANK', 'SEED', 'WIN', 'LOSS',
-                          'ADJ_EM', 'ADJ_O', 'ADJ_D', 'ADJ_T', 'LUCK',
-                          'SOS_ADJ_EM', 'SOS_OPP_O', 'SOS_OPP_D', 'NCSOS_ADJ_EM']]
-
-print(float_rollup.info())
-
-#%%
-#test = st.kstest(float_rollup['EFG%'], 'norm')
-da_testtv = st.normaltest(float_rollup['EFG%'])
-
-print(da_testtv)
-
-#%%
-## NORMALITY TESTS
-normality_df = pd.DataFrame()
-for col in float_rollup.columns:
-    normality_df[col] = st.kstest(float_rollup[col], 'norm')
-    #kstest_t = st.kstest(df['temp'], 'norm')
-    #da_testtv = st.normaltest(df['traffic_volume'])
-    #da_testt = st.normaltest(df['temp'])
-    #shapiro_testtv = st.shapiro(df['traffic_volume'])
-    #shapiro_testt = st.shapiro(df['temp'])
-
-print(normality_df)
-#%%
-## NORMALITY TESTS
-kstest_tv = st.kstest(df['traffic_volume'],'norm')
-kstest_t = st.kstest(df['temp'],'norm')
-da_testtv = st.normaltest(df['traffic_volume'])
-da_testt = st.normaltest(df['temp'])
-shapiro_testtv = st.shapiro(df['traffic_volume'])
-shapiro_testt = st.shapiro(df['temp'])
-
-#%%
-# NUMERICS
-numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
-numeric_cols = rollup_df.select_dtypes(include=numerics)
-#numeric_cols.dropna(inplace=True)
-
-X = rollup_df[rollup_df._get_numeric_data().columns.to_list()[:-1]]
-Y = rollup_df['WIN%']
-#X.drop(columns='price', inplace=True, axis=1)
-
-#%%
-print(X.info())
-
-#%%
-X = StandardScaler().fit_transform(X)
-
-#%%
-
-pca = PCA(n_components=10, svd_solver='full') # 'mle'
-
-pca.fit(X)
-X_PCA = pca.transform(X)
-print('ORIGINAL DIMENSIONS:', X.shape)
-print('TRANSFORMED DIMENSIONS:', X_PCA.shape)
-print(f'EXPLAINED VARIANCE RATIO: {pca.explained_variance_ratio_}')
-
-
-#%%
-x = np.arange(1, len(np.cumsum(pca.explained_variance_ratio_))+1, 1)
-
-plt.figure(figsize=(12,8))
-plt.plot(x, np.cumsum(pca.explained_variance_ratio_))
-plt.xticks(x)
-#plt.grid()
-plt.show()
-
-#%% [markdown]
-
-# 10 features explain ~89.6% of variance
-
-
-#%%
-# SINGULAR VALUE DECOMPOSITION ANALYSIS [SVD]
-# CONDITION NUMBER
-
-# ORIGINAL DATA
-
-from numpy import linalg as LA
-
-H = np.matmul(X.T, X)
-_, d, _ = np.linalg.svd(H)
-print(f'ORIGINAL DATA: SINGULAR VALUES {d}')
-print(f'ORIGINAL DATA: CONDITIONAL NUMBER {LA.cond(X)}')
-
-
-#%%
-# TRANSFORMED DATA
-H_PCA = np.matmul(X_PCA.T, X_PCA)
-_, d_PCA, _ = np.linalg.svd(H_PCA)
-print(f'TRANSFORMED DATA: SINGULAR VALUES {d_PCA}')
-print(f'TRANSFORMED DATA: CONDITIONAL NUMBER {LA.cond(X_PCA)}')
-print('*'*58)
-
-#%%
-# CONSTRUCTION OF REDUCED DIMENSION DATASET
-
-#pca_df = pca.explained_variance_ratio_
-
-a, b = X_PCA.shape
-column = []
-df_pca = pd.DataFrame(X_PCA).corr()
-
-for i in range(b):
-    column.append(f'PRINCIPLE COLUMN {i+1}')
-sns.heatmap(df_pca, annot=True, xticklabels=column, yticklabels=column)
-df_PCA = pd.DataFrame(data=X_PCA)
-plt.title("correlation coefficient")
-plt.show()
-
-df_PCA = pd.concat([df_PCA, Y], axis=1)
-df_PCA.columns = pd.DataFrame(data=df, columns=col)
-
-df_PCA.info()
-
-#print("old one:",df1.head().to_string)
-#print("new one:",df_PCA.head().to_string)
-
-#%% [markdown]
-
-# SINGULAR VALUE DECOMPOSITION [SVD]
-# * Used in tandem with Principal Component Analysis
-#     * Dimensionality Reduction - reducing number of input variables / features
-# * Create projection of sparse dataset prior to fitting a model
-#     * Always outputs a square matrix H (transposed X)
-#     * Singular values close to zero to be removed
-# * Singular Value Decomposition
-#     * Higher = GOOD
-# * Conditional Number
-#    * Higher = BAD
-# * Eigensystem Analysis
-#     * Eigenvalues
-#    * Eigenvectors
-#     * Condition Number - max value / min number
-#         * LA.cond(X)
-#         * <100 = weak multicollinearity
-#         * 100<k<1000 = moderate multicollinearity
-#         * >1000 = severe multicollinearity
-
-
-
-#%% [markdown]
-## VISUALIZATION INDEX:
-# 1) Line-plot
-# 2) Bar-plot (stacked, grouped)
-# 3) Count-plot
-# 4) Cat-plot
-# 5) Pie-chart
-# 6) Dis-plot
-# 7) Pair plot
-# 8) Heatmap
-# 9) Hist-plot
-# 10) QQ-plot
-# 11) Kernel density estimate
-# 12) Scatter plot and regression line (sklearn)
-# 13) Multivariate Box plot
-
-#%%
-# 1) Line-plot
-plt.figure(figsize=(10,10))
-sns.lineplot(data=tr_df, x='offensive-efficiency', y='defensive-efficiency', palette='magma', markers=True)
-plt.title('OFF. VS. DEF. EFFICIENCY (BY CONFERENCE)', fontsize=16)
-plt.xlabel('OFFENSIVE EFFICIENCY', fontsize=16)
-plt.ylabel('DEFENSIVE EFFICIENCY', fontsize=16)
-plt.legend(loc='best')
-
-plt.grid()
-plt.tight_layout(pad=1)
-
-for i in tr_df.index:
-  plt.text(tr_df['offensive-efficiency'][tr_data_hub.index==i]+.01,tr_data_hub['defensive-efficiency'][tr_data_hub.index==i]+.01,str(i), color='black')
-
-plt.show()
-
-
-#%%
-# 2) Bar-plot (stacked, grouped)
-
-
-#%%
-# 3) Count-plot
-
-
-#%%
-# 4) Cat-plot
-
-
-#%%
-# 5) Pie-chart
-
-
-#%%
-# 6) Dis-plot
-
-
-#%%
-# 7) Pair plot
-
-
-#%%
-# 8) Heatmap
-
-
-#%%
-# 9) Hist-plot
-
-
-#%%
-# 10) QQ-plot
-
-
-#%%
-# 11) Kernel density estimate
-
-
-#%%
-# 12) Scatter plot and regression line (sklearn)
-plt.figure(figsize=(10,10))
-sns.scatterplot(data=tr_df, x='offensive-efficiency', y='defensive-efficiency', palette='magma', markers=True)
-plt.title('OFF. VS. DEF. EFFICIENCY (BY CONFERENCE)', fontsize=16)
-plt.xlabel('OFFENSIVE EFFICIENCY', fontsize=16)
-plt.ylabel('DEFENSIVE EFFICIENCY', fontsize=16)
-plt.legend(loc='best')
-
-plt.grid()
-plt.tight_layout(pad=1)
-
-for i in tr_df.index:
-  plt.text(tr_df['offensive-efficiency'][tr_data_hub.index==i]+.01,tr_data_hub['defensive-efficiency'][tr_data_hub.index==i]+.01,str(i), color='black')
-
-plt.show()
-
-#%%
-# 13) Multivariate Box plot
-
-
-#%%
-
-14)	 Area plot (if applicable)
-
-qqplot(df['traffic_volume'])
-plt.title("QQ-plot of traffic volume ")
-plt.show()
-#%%
-
-# SCATTERPLOT -
-plt.figure(figsize=(10,10))
-sns.scatterplot(data=tr_df, x='offensive-efficiency', y='defensive-efficiency', palette='magma', markers=True)
-plt.title('OFF. VS. DEF. EFFICIENCY (BY CONFERENCE)', fontsize=16)
-plt.xlabel('OFFENSIVE EFFICIENCY', fontsize=16)
-plt.ylabel('DEFENSIVE EFFICIENCY', fontsize=16)
-plt.legend(loc='best')
-
-plt.grid()
-plt.tight_layout(pad=1)
-
-for i in tr_df.index:
-  plt.text(tr_df['offensive-efficiency'][tr_data_hub.index==i]+.01,tr_data_hub['defensive-efficiency'][tr_data_hub.index==i]+.01,str(i), color='black')
-
-plt.show()
-
-
-
-
-#%%
-
-## DATA IMPORT
-
-# kenpom_2022 = pd.read_csv('drive/My Drive/SPORTS/kenpom_pull_3-14-22.csv')
-kenpom_2022 = pd.read_excel('drive/My Drive/SPORTS/kenpom_pull_3-14-22.xlsx')
-
-kenpom_2022 = kenpom_2022[kenpom_2022['Year'] == 2022]
-kenpom_2022 = kenpom_2022.drop(
-    columns=['Year', 'AdjO Rank', 'AdjD Rank', 'AdjT Rank', 'SOS OppO Rank', 'SOS OppD Rank', 'SOS Adj EM Rank',
-             'NCSOS Adj EM Rank', 'Luck Rank'])
-mm_2022 = kenpom_2022[kenpom_2022['Seed'] >= 1]
-mm_2022 = mm_2022.set_index('Team')
-# print(kenpom_2022.info())
-# print(kenpom_2022.head())
-
-print(mm_2022.info())
-print(mm_2022.head())
-
-#%%
-
-kp_cols = kenpom_2022.columns
-mm_cols = mm_2022.columns
-kp_num_cols = kenpom_2022[
-    ['Rank', 'Win', 'Loss', 'Seed', 'Adj EM', 'AdjO', 'AdjD', 'AdjT', 'SOS Adj EM', 'SOS OppO', 'SOS OppD',
-     'NCSOS Adj EM']]
-kp_cat_cols = kenpom_2022[['Team', 'Conference']]
-
-# top50_2022 = kenpom_2022[(kenpom_2022['Rank'] <= 50)].drop(columns=['Year'])
-# top100_2022 = kenpom_2022[(kenpom_2022['Rank'] <= 100)].drop(columns=['Year'])
-# top150_2022 = kenpom_2022[(kenpom_2022['Rank'] <= 150)].drop(columns=['Year'])
-
-# print(kp_num_cols)
-# kenpom_2022[:100]
-print(mm_cols)
-print('---------------------------------------------------------------------------------')
-print(mm_2022)
-
-print(mm_2022.index)
-
-#%%
-# CORRELATION MATRIX
-mm_2022.corr()
-
-
-#%%
-## DATA VIZ
-
-# create correlation variables relative to rest of DataFrame
-rank_corr = mm_2022.corr()[['Rank']].sort_values(by='Rank', ascending=False)
-seed_corr = mm_2022.corr()[['Seed']].sort_values(by='Seed', ascending=False)
-
-# create heatmap to visualize correlation variable
-# SUBPLOTS
-plt.figure(figsize=(10, 8))
-sns.heatmap(rank_corr, annot=True, cmap='flare', vmin=-1, vmax=1, linecolor='white', linewidth=2);
-# sns.heatmap(seed_corr, annot = True, cmap = 'flare', vmin=-1, vmax=1, linecolor = 'white', linewidth = 2);
-
-# SCATTERPLOT - NET EM VS WINS
-
-# f, (ax1) = plt.subplots(1, 1)
-
-# plt.figure(figsize=(16,8))
-
-plt.subplot(1, 2, 1)
-sns.scatterplot(data=mm_2022, x='AdjO', y='AdjD', hue='Conference', style='Conference', size='Conference',
-                palette='magma', markers=True)
-plt.title('AdjO vs. AdjD (BY CONFERENCE)', fontsize=16)
-# sns.set_title('AdjO vs. AdjD ')
-# plt.xlabel('ADJ. OFFENSE', fontsize=16)
-# plt.ylabel('ADJ. DEFENSE', fontsize=16)
-plt.axis('square')
-plt.legend(loc='best')
-
-for i in mm_2022.index:
-    plt.text(mm_2022.AdjO[mm_2022.index == i] + .01, mm_2022.AdjD[mm_2022.index == i] + .01, str(i), color='black')
-
-plt.subplot(1, 2, 2)
-sns.scatterplot(data=mm_2022, x='Adj EM', y='Seed', hue='Conference', style='Conference', size='Conference',
-                palette='magma', markers=True)
-plt.title('ADJ EM vs. SEED', fontsize=16)
-# sns.set_title('AdjO vs. AdjD ')
-# plt.xlabel('ADJ. OFFENSE', fontsize=16)
-# plt.ylabel('ADJ. DEFENSE', fontsize=16)
-
-plt.axis('square')
-# ax.axis('equal')
-plt.legend(loc='best')
-
-for i in mm_2022.index:
-    plt.text(mm_2022.AdjO[mm_2022.index == i] + .01, mm_2022.AdjD[mm_2022.index == i] + .01, str(i), color='black')
-
-# plt.grid()
-plt.tight_layout(pad=1)
-
-plt.show()
-
-
-#%%
-
-tourney_teams = tr_df.loc[['Gonzaga', 'Arizona', 'Kansas', 'Baylor', #1
-                           'Duke', 'Kentucky', 'Auburn', 'Villanova', #2
-                                        'Purdue', 'Texas Tech',  'Tennessee', 'Wisconsin', #3
-                                        'Arkansas', 'UCLA', 'Illinois', 'Providence', #4
-                                        'Iowa', 'Houston', 'Connecticut', 'St Marys', #5
-                                        'Alabama', 'Colorado St', 'LSU', 'Texas', #6
-                                        'Murray St', 'USC', 'Michigan St', 'Ohio State', #7
-                                        'N Carolina', 'Boise State', 'San Diego St', 'Seton Hall', #8
-                                        'Memphis', 'Creighton', 'Marquette', 'TX Christian',  #9
-                                        'San Francisco', 'Miami (FL)', 'Davidson', 'Loyola-Chi', #10
-                                        'Notre Dame', 'Michigan', 'VA Tech',  'Rutgers', 'Iowa State', #11
-                                        'Indiana', 'Wyoming', 'Richmond', 'N Mex State', 'UAB', #12
-                                        'Vermont', 'S Dakota St', 'Akron', 'Chattanooga',#13
-                                        'Montana St', 'Longwood', 'Colgate', 'Yale', #14
-                                        'St Peters', 'Jackson St', 'CS Fullerton', 'Delaware', #15
-                                        'Georgia St', 'Norfolk St', 'TX Southern', 'Bryant',]] #16
-
-tourney_teams_dict = {1:['Gonzaga',  'Arizona', 'Kansas', 'Baylor'], #1
-                      2:['Duke', 'Kentucky', 'Auburn', 'Villanova'], #2
-                      3:['Purdue', 'Texas Tech',  'Tennessee', 'Wisconsin'], #3
-                     4: ['Arkansas', 'UCLA', 'Illinois', 'Providence'], #4
-                                        5: ['Iowa', 'Houston', 'Connecticut', 'St Marys'], #5
-                                        6: ['Alabama', 'Colorado St', 'LSU', 'Texas'], #6
-                                        7: ['Murray St', 'USC', 'Michigan St', 'Ohio State'], #7
-                                        8: ['N Carolina', 'Boise State', 'San Diego St', 'Seton Hall'], #8
-                                        9: ['Memphis', 'Creighton', 'Marquette', 'TX Christian'],  #9
-                                        10: ['San Francisco', 'Miami (FL)', 'Davidson', 'Loyola-Chi'], #10
-                                        11: ['Notre Dame', 'Michigan', 'VA Tech',  'Rutgers', 'Iowa State'], #11
-                                        12: ['Indiana', 'Wyoming', 'Richmond', 'N Mex State', 'UAB'], #12
-                                        13: ['Vermont', 'S Dakota St', 'Akron', 'Chattanooga'],#13
-                                        14: ['Montana St', 'Longwood', 'Colgate', 'Yale'], #14
-                                        15: ['St Peters', 'Jackson St', 'CS Fullerton', 'Delaware'], #15
-                                        16: ['Georgia St', 'Norfolk St', 'TX Southern', 'Bryant']
-                      }
-
-tourney_teams.reset_index(inplace=True)
-print(tourney_teams.info())
-  #print(tourney_teams)
-  #print(tr_data_hub_2022.info())
-  #print(tr_data_hub_2022.head())
-
-#%%
-
-print(tourney_teams.columns)
-print(tourney_teams_dict.keys())
-print(tourney_teams_dict.values())
-print(tourney_teams_dict)
-
-#%%
-
-teamlist = ['Gonzaga', 'Arizona', 'Kansas', 'Baylor', #1
-                           'Duke', 'Kentucky', 'Auburn', 'Villanova', #2
-                                        'Purdue', 'Texas Tech',  'Tennessee', 'Wisconsin', #3
-                                        'Arkansas', 'UCLA', 'Illinois', 'Providence', #4
-                                        'Iowa', 'Houston', 'Connecticut', 'St Marys', #5
-                                        'Alabama', 'Colorado St', 'LSU', 'Texas', #6
-                                        'Murray St', 'USC', 'Michigan St', 'Ohio State', #7
-                                        'N Carolina', 'Boise State', 'San Diego St', 'Seton Hall', #8
-                                        'Memphis', 'Creighton', 'Marquette', 'TX Christian',  #9
-                                        'San Francisco', 'Miami (FL)', 'Davidson', 'Loyola-Chi', #10
-                                        'Notre Dame', 'Michigan', 'VA Tech',  'Rutgers', 'Iowa State', #11
-                                        'Indiana', 'Wyoming', 'Richmond', 'N Mex State', 'UAB', #12
-                                        'Vermont', 'S Dakota St', 'Akron', 'Chattanooga',#13
-                                        'Montana St', 'Longwood', 'Colgate', 'Yale', #14
-                                        'St Peters', 'Jackson St', 'CS Fullerton', 'Delaware', #15
-                                        'Georgia St', 'Norfolk St', 'TX Southern', 'Bryant',] #16
-
-#tr_df = [tr_df['Team'][teamlist]]
-
-
-
-
-#%%
-
-
-
-tourney_teams = tr_df.loc[['Gonzaga', 'Arizona', 'Kansas', 'Baylor', #1
-                           'Duke', 'Kentucky', 'Auburn', 'Villanova', #2
-                                        'Purdue', 'Texas Tech',  'Tennessee', 'Wisconsin', #3
-                                        'Arkansas', 'UCLA', 'Illinois', 'Providence', #4
-                                        'Iowa', 'Houston', 'Connecticut', 'St Marys', #5
-                                        'Alabama', 'Colorado St', 'LSU', 'Texas', #6
-                                        'Murray St', 'USC', 'Michigan St', 'Ohio State', #7
-                                        'N Carolina', 'Boise State', 'San Diego St', 'Seton Hall', #8
-                                        'Memphis', 'Creighton', 'Marquette', 'TX Christian',  #9
-                                        'San Francisco', 'Miami (FL)', 'Davidson', 'Loyola-Chi', #10
-                                        'Notre Dame', 'Michigan', 'VA Tech',  'Rutgers', 'Iowa State', #11
-                                        'Indiana', 'Wyoming', 'Richmond', 'N Mex State', 'UAB', #12
-                                        'Vermont', 'S Dakota St', 'Akron', 'Chattanooga',#13
-                                        'Montana St', 'Longwood', 'Colgate', 'Yale', #14
-                                        'St Peters', 'Jackson St', 'CS Fullerton', 'Delaware', #15
-                                        'Georgia St', 'Norfolk St', 'TX Southern', 'Bryant',]] #16
-
-#tourney_teams.reset_index(inplace=True)
-
-print(tr_df.columns)
-print(tr_df.info())
-
-#%%
-tourney_teams_dict = {1:['Gonzaga',  'Arizona', 'Kansas', 'Baylor'], #1
-                      2:['Duke', 'Kentucky', 'Auburn', 'Villanova'], #2
-                      3:['Purdue', 'Texas Tech',  'Tennessee', 'Wisconsin'], #3
-                     4: ['Arkansas', 'UCLA', 'Illinois', 'Providence'], #4
-                                        5: ['Iowa', 'Houston', 'Connecticut', 'St Marys'], #5
-                                        6: ['Alabama', 'Colorado St', 'LSU', 'Texas'], #6
-                                        7: ['Murray St', 'USC', 'Michigan St', 'Ohio State'], #7
-                                        8: ['N Carolina', 'Boise State', 'San Diego St', 'Seton Hall'], #8
-                                        9: ['Memphis', 'Creighton', 'Marquette', 'TX Christian'],  #9
-                                        10: ['San Francisco', 'Miami (FL)', 'Davidson', 'Loyola-Chi'], #10
-                                        11: ['Notre Dame', 'Michigan', 'VA Tech',  'Rutgers', 'Iowa State'], #11
-                                        12: ['Indiana', 'Wyoming', 'Richmond', 'N Mex State', 'UAB'], #12
-                                        13: ['Vermont', 'S Dakota St', 'Akron', 'Chattanooga'],#13
-                                        14: ['Montana St', 'Longwood', 'Colgate', 'Yale'], #14
-                                        15: ['St Peters', 'Jackson St', 'CS Fullerton', 'Delaware'], #15
-                                        16: ['Georgia St', 'Norfolk St', 'TX Southern', 'Bryant']}
-
-tr_df['SEED'] = tr_df['Team'].map(tourney_teams_dict)
-print(tr_df['SEED'].isnull().sum())
-
-
-
-#%%
-
-table = go.Figure(data=[go.Table(
-    header=dict(values=columns, fill_color='#FFBD59',
-                line_color='white', align='center',
-                font=dict(color='white', size=13)),
-    cells=dict(values=[test[c] for c in columns],
-               format=["d", "", "", "", "", ".2%"],
-               fill_color=[['white', '#FFF2CC']*(len(test)-1)],
-               align='center'))
-])
-table.update_layout(title_text=f'Sample records (n={len(test)})',
-                    font_family='Tahoma')
-
-#%%
-
-html.H3('Slider 1'), \
-dcc.Slider(id='slider-1',
-           min=0,
-           max=20,
-           value=10)
-
-html.H3('Slider 2'),
-dcc.Slider(id='slider-2',
-           min=0,
-           max=20,
-           value=10)
-
-html.H3('Slider 3'),
-dcc.Slider(id='slider-3',
-           min=0,
-           max=20,
-           value=10)
-
-html.H3('Slider 4'),
-dcc.Slider(id='slider-4',
-           min=0,
-           max=20,
-           value=10)
 
 #%%
